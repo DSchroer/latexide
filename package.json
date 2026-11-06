@@ -4,6 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "description": "A local-first LaTeX IDE in the browser",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "predev": "npm run assets",
     "dev": "vite",

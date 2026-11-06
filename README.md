@@ -2,6 +2,8 @@
 
 A local-first LaTeX editor that compiles in your browser. No account, no server, no uploads.
 
+**Live:** https://dschroer.github.io/latexide/
+
 - File tree and Monaco editor
 - Import a project from a `.zip`, including a folder wrapper
 - Create and rename files; upload images into `IMAGES/`

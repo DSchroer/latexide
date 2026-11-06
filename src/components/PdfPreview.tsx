@@ -124,7 +124,7 @@ export function PdfPreview({ data, onDownload }: Props) {
       <div className="preview-toolbar">
         <div className="preview-title">
           PDF
-          {doc && <span className="muted"> · {doc.numPages} pages</span>}
+          {doc && <span className="muted"> · {doc.numPages} {doc.numPages === 1 ? 'page' : 'pages'}</span>}
         </div>
         <div className="preview-controls">
           <button className="icon-button" onClick={() => go(-1)} disabled={!doc || page <= 1} title="Previous page">‹</button>
