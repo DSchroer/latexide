@@ -33,10 +33,11 @@ export async function hashFile(file: ProjectFile): Promise<string> {
   return sha256Hex(file.data ?? new ArrayBuffer(0))
 }
 
-export async function hashManifest(mainFile: string, files: VersionFile[]): Promise<string> {
+export async function hashManifest(mainFile: string, files: VersionFile[], folders: string[] = []): Promise<string> {
   return sha256Hex(
     JSON.stringify({
       mainFile,
+      folders: [...folders].sort(),
       files: [...files]
         .sort((a, b) => a.path.localeCompare(b.path))
         .map((file) => [file.path, file.hash]),

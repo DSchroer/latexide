@@ -15,7 +15,7 @@ import {
   stripCommonRoot,
   uniquePath,
 } from './lib/paths'
-import type { Build, CompileFile, Diagnostic, Project, ProjectFile, Version } from './types'
+import type { Build, CompileFile, Diagnostic, Project, ProjectFile, ProjectFolder, Version } from './types'
 import { useCompiler } from './hooks/useCompiler'
 import { useSpellcheck, type SpellLanguage } from './hooks/useSpellcheck'
 import { FileTree } from './components/FileTree'
@@ -27,7 +27,7 @@ import { Menu } from './components/Menu'
 import { HistoryPanel } from './components/HistoryPanel'
 import { DiffPanel } from './components/DiffPanel'
 import ZipWorker from './workers/zip.worker?worker'
-import { createVersion, ensureInitialVersion, exportHistory, importHistory, restoreVersion } from './lib/versioning'
+import { createVersion, deleteProjectData, ensureInitialVersion, exportHistory, importHistory, restoreVersion } from './lib/versioning'
 
 type ZipEntry = { path: string; data: ArrayBuffer }
 
@@ -103,6 +103,7 @@ export default function App() {
   const [projects, setProjects] = useState<Project[]>([])
   const [projectId, setProjectId] = useState<string | null>(null)
   const [files, setFiles] = useState<Record<string, ProjectFile>>({})
+  const [folders, setFolders] = useState<Record<string, ProjectFolder>>({})
   const [openPaths, setOpenPaths] = useState<string[]>([])
   const [activePath, setActivePath] = useState<string | null>(null)
   const [pdf, setPdf] = useState<ArrayBuffer | null>(null)
@@ -136,6 +137,8 @@ export default function App() {
 
   const filesRef = useRef(files)
   filesRef.current = files
+  const foldersRef = useRef(folders)
+  foldersRef.current = folders
   const projectIdRef = useRef(projectId)
   projectIdRef.current = projectId
   const resetOnNextCompile = useRef(false)
@@ -244,7 +247,7 @@ export default function App() {
     const current = projectRef.current
     if (!current) return null
     await Promise.all(Object.values(filesRef.current).map((file) => db.files.put(file)))
-    const version = await createVersion(current.id, Object.values(filesRef.current), current.mainFile, kind, label)
+    const version = await createVersion(current.id, Object.values(filesRef.current), current.mainFile, kind, label, Object.keys(foldersRef.current))
     if (version) {
       setVersionCount(await db.versions.where('projectId').equals(current.id).count())
       setHistoryRefreshKey((value) => value + 1)
@@ -294,6 +297,12 @@ export default function App() {
 
     const nextActive = version.mainFile && map[version.mainFile] ? version.mainFile : Object.keys(map)[0] ?? null
     setFiles(map)
+    const restoredFolders: Record<string, ProjectFolder> = {}
+    for (const path of version.folders ?? []) {
+      restoredFolders[path] = { projectId: current.id, path, createdAt: Date.now() }
+    }
+    foldersRef.current = restoredFolders
+    setFolders(restoredFolders)
     setOpenPaths((previous) => {
       const kept = previous.filter((path) => map[path])
       if (nextActive && !kept.includes(nextActive)) kept.push(nextActive)
@@ -311,7 +320,7 @@ export default function App() {
     )
     resetOnNextCompile.current = true
 
-    await createVersion(current.id, restored, version.mainFile, 'restore', t('history.restoredFrom', { label: version.label }))
+    await createVersion(current.id, restored, version.mainFile, 'restore', t('history.restoredFrom', { label: version.label }), version.folders ?? [])
     setVersionCount(await db.versions.where('projectId').equals(current.id).count())
     setHistoryRefreshKey((value) => value + 1)
     setHistoryOpen(false)
@@ -322,8 +331,11 @@ export default function App() {
 
   const loadProject = useCallback(async (next: Project) => {
     const list = await db.files.where('projectId').equals(next.id).toArray()
+    const folderList = await db.folders.where('projectId').equals(next.id).toArray()
     const map: Record<string, ProjectFile> = {}
     for (const file of list) map[file.path] = file
+    const folderMap: Record<string, ProjectFolder> = {}
+    for (const folder of folderList) folderMap[folder.path] = folder
 
     const lastFile = await getUISetting(`activeFile:${next.id}`)
     const initial =
@@ -334,11 +346,12 @@ export default function App() {
           : Object.keys(map)[0] ?? null
 
     const build = await db.builds.get(next.id)
-    await ensureInitialVersion(next.id, list, next.mainFile, t('history.initial'))
+    await ensureInitialVersion(next.id, list, next.mainFile, t('history.initial'), folderList.map((folder) => folder.path))
     setVersionCount(await db.versions.where('projectId').equals(next.id).count())
 
     setProjectId(next.id)
     setFiles(map)
+    setFolders(folderMap)
     setOpenPaths(initial ? [initial] : [])
     setActivePath(initial)
     setSavedBuild(build ?? null)
@@ -396,7 +409,7 @@ export default function App() {
       void captureSnapshot('auto', t('history.autosave'))
     }, 2 * 60 * 1000)
     return () => window.clearTimeout(timer)
-  }, [captureSnapshot, files, projectId, t])
+  }, [captureSnapshot, files, folders, projectId, t])
 
   const queueSave = useCallback((file: ProjectFile) => {
     const key = `${file.projectId}:${file.path}`
@@ -438,9 +451,9 @@ export default function App() {
     })
   }
 
-  const createFile = async () => {
+  const createFile = async (initialPath = t('project.defaultFileName')) => {
     if (!projectId) return
-    const name = window.prompt(t('project.newFilePrompt'), t('project.defaultFileName'))
+    const name = window.prompt(t('project.newFilePrompt'), initialPath)
     if (!name) return
     const path = normalizePath(name)
     if (!path) return
@@ -461,6 +474,69 @@ export default function App() {
     await db.files.put(file)
     setFiles((previous) => ({ ...previous, [path]: file }))
     openFile(path)
+  }
+
+  const createFolder = async (parent = '') => {
+    if (!projectId) return
+    const name = window.prompt(t('files.folderPrompt'), parent ? `${parent}/folder` : 'folder')
+    if (!name) return
+    const path = normalizePath(name)
+    if (!path) return
+    if (filesRef.current[path]) {
+      notify(t('toast.nameExists'), 'error')
+      return
+    }
+    if (folders[path] || Object.keys(filesRef.current).some((filePath) => filePath.startsWith(`${path}/`))) {
+      notify(t('files.folderExists'), 'error')
+      return
+    }
+    const folder: ProjectFolder = { projectId, path, createdAt: Date.now() }
+    await db.folders.put(folder)
+    setFolders((previous) => ({ ...previous, [path]: folder }))
+  }
+
+  const deleteFolder = async (path: string) => {
+    if (!project) return
+    const affected = Object.keys(filesRef.current).filter((filePath) => filePath.startsWith(`${path}/`))
+    if (!window.confirm(t('files.folderDeleteConfirm', { path, count: affected.length }))) return
+
+    const remaining = { ...filesRef.current }
+    for (const filePath of affected) delete remaining[filePath]
+
+    let nextMain = project.mainFile
+    if (affected.includes(project.mainFile)) {
+      nextMain = Object.keys(remaining).find((filePath) => filePath.endsWith('.tex')) ?? ''
+    }
+
+    const folderPaths = Object.keys(folders).filter((folderPath) => folderPath === path || folderPath.startsWith(`${path}/`))
+    await db.transaction('rw', db.files, db.folders, db.projects, async () => {
+      for (const filePath of affected) await db.files.delete([project.id, filePath])
+      for (const folderPath of folderPaths) await db.folders.delete([project.id, folderPath])
+      if (nextMain !== project.mainFile) {
+        await db.projects.update(project.id, { mainFile: nextMain, updatedAt: Date.now() })
+      }
+    })
+
+    filesRef.current = remaining
+    setFiles(remaining)
+    setFolders((previous) => {
+      const copy = { ...previous }
+      for (const folderPath of folderPaths) delete copy[folderPath]
+      return copy
+    })
+    setOpenPaths((previous) => {
+      const next = previous.filter((filePath) => !affected.includes(filePath))
+      if (activePath && affected.includes(activePath)) {
+        const fallback = next[next.length - 1] ?? (nextMain || Object.keys(remaining)[0] || null)
+        setActivePath(fallback)
+        if (fallback && !next.includes(fallback)) next.push(fallback)
+      }
+      return next
+    })
+    if (nextMain !== project.mainFile) {
+      setProjects((previous) => previous.map((item) => (item.id === project.id ? { ...item, mainFile: nextMain } : item)))
+    }
+    resetOnNextCompile.current = true
   }
 
   const renameFile = async (oldPath: string) => {
@@ -717,7 +793,7 @@ export default function App() {
       }
 
       if (includeHistory) {
-        Object.assign(entries, await exportHistory(project))
+        Object.assign(entries, await exportHistory(project, Object.keys(foldersRef.current)))
       }
 
       const archive = zipSync(entries, { level: 6 })
@@ -780,6 +856,23 @@ export default function App() {
     const all = await db.projects.orderBy('updatedAt').reverse().toArray()
     setProjects(all)
     await loadProject(created)
+  }
+
+  const removeProject = async () => {
+    if (!project) return
+    if (!window.confirm(t('project.deleteProjectConfirm', { name: project.name }))) return
+
+    await deleteProjectData(project.id)
+    const remaining = projects.filter((item) => item.id !== project.id)
+    setProjects(remaining)
+    setHistoryOpen(false)
+    setCompareVersion(null)
+    if (remaining.length > 0) {
+      await loadProject(remaining[0])
+    } else {
+      await createBlankProject()
+    }
+    notify(t('project.deleted'))
   }
 
   const openDiagnostic = (file: string, line: number | null) => {
@@ -868,12 +961,14 @@ export default function App() {
           ))}
         </select>
         <button className="icon-button" onClick={() => void createBlankProject()} title={t('toolbar.newProject')}>+</button>
+        <button className="icon-button delete-project-button" onClick={() => void removeProject()} title={t('project.deleteProject')} disabled={!project}>🗑</button>
 
         <div className="toolbar-actions">
           <Menu
             label={t('toolbar.file')}
             items={[
               { label: t('toolbar.newFile'), onClick: () => void createFile(), disabled: !projectId },
+              { label: t('toolbar.newFolder'), onClick: () => void createFolder(), disabled: !projectId },
               { label: t('toolbar.uploadImage'), onClick: () => imageInputRef.current?.click(), disabled: !projectId },
               { label: importing ? t('toolbar.importing') : t('toolbar.importZip'), onClick: () => zipInputRef.current?.click(), disabled: importing },
             ]}
@@ -968,6 +1063,7 @@ export default function App() {
       <main className={`main-grid mobile-${mobileTab}${showProblems ? ' with-problems' : ''}`}>
         <FileTree
           files={files}
+          folders={Object.keys(folders)}
           activePath={activePath}
           mainFile={project?.mainFile ?? ''}
           onOpen={openFile}
@@ -975,6 +1071,9 @@ export default function App() {
           onDelete={(path) => void deleteFile(path)}
           onSetMain={(path) => void setMainFile(path)}
           onNewFile={() => void createFile()}
+          onNewFolder={() => void createFolder()}
+          onNewFileInFolder={(folder) => void createFile(`${folder}/${t('project.defaultFileName')}`)}
+          onDeleteFolder={(folder) => void deleteFolder(folder)}
           onImportZip={() => zipInputRef.current?.click()}
         />
 

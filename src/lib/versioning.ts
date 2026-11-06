@@ -49,6 +49,7 @@ export async function createVersion(
   mainFile: string,
   kind: VersionKind,
   label: string,
+  folders: string[] = [],
 ): Promise<Version | null> {
   const prepared: PreparedFile[] = []
   for (const file of [...files].sort((a, b) => a.path.localeCompare(b.path))) {
@@ -62,7 +63,8 @@ export async function createVersion(
     size: file.size,
   }))
 
-  const manifestHash = await hashManifest(mainFile, manifest)
+  const folderPaths = [...folders].sort()
+  const manifestHash = await hashManifest(mainFile, manifest, folderPaths)
   const latest = await getLatestVersion(projectId)
   if (kind === 'auto' && latest?.manifestHash === manifestHash) return null
 
@@ -75,6 +77,7 @@ export async function createVersion(
     mainFile,
     manifestHash,
     files: manifest,
+    folders: folderPaths,
     size: manifest.reduce((total, file) => total + file.size, 0),
   }
 
@@ -96,10 +99,11 @@ export async function ensureInitialVersion(
   files: ProjectFile[],
   mainFile: string,
   label = 'Initial version',
+  folders: string[] = [],
 ): Promise<void> {
   const count = await db.versions.where('projectId').equals(projectId).count()
   if (count === 0) {
-    await createVersion(projectId, files, mainFile, 'initial', label)
+    await createVersion(projectId, files, mainFile, 'initial', label, folders)
   }
 }
 
@@ -125,9 +129,15 @@ export async function materializeVersion(projectId: string, version: Version): P
 
 export async function restoreVersion(projectId: string, version: Version): Promise<ProjectFile[]> {
   const files = await materializeVersion(projectId, version)
-  await db.transaction('rw', db.files, db.projects, async () => {
+  await db.transaction('rw', db.files, db.folders, db.projects, async () => {
     await db.files.where('projectId').equals(projectId).delete()
     if (files.length) await db.files.bulkPut(files)
+    await db.folders.where('projectId').equals(projectId).delete()
+    if (version.folders?.length) {
+      await db.folders.bulkPut(
+        version.folders.map((path) => ({ projectId, path, createdAt: Date.now() })),
+      )
+    }
     await db.projects.update(projectId, {
       mainFile: version.mainFile,
       updatedAt: Date.now(),
@@ -136,7 +146,7 @@ export async function restoreVersion(projectId: string, version: Version): Promi
   return files
 }
 
-export async function exportHistory(project: Project): Promise<Record<string, Uint8Array>> {
+export async function exportHistory(project: Project, folders: string[] = []): Promise<Record<string, Uint8Array>> {
   const versions = await loadVersions(project.id)
   const hashes = new Set<string>()
   for (const version of versions) {
@@ -153,7 +163,7 @@ export async function exportHistory(project: Project): Promise<Record<string, Ui
     format: 'latexide-history',
     version: 1,
     exportedAt: new Date().toISOString(),
-    project: { name: project.name, mainFile: project.mainFile },
+    project: { name: project.name, mainFile: project.mainFile, folders },
     versions,
   }
 
@@ -164,19 +174,19 @@ export async function exportHistory(project: Project): Promise<Record<string, Ui
 export async function importHistory(
   projectId: string,
   entries: HistoryEntry[],
-): Promise<{ imported: number; mainFile?: string }> {
+): Promise<{ imported: number; mainFile?: string; folders: string[] }> {
   const versionsEntry = entries.find((entry) => entry.path === '.history/versions.json')
-  if (!versionsEntry) return { imported: 0 }
+  if (!versionsEntry) return { imported: 0, folders: [] }
 
   let archive: HistoryArchive
   try {
     archive = JSON.parse(new TextDecoder().decode(new Uint8Array(versionsEntry.data))) as HistoryArchive
   } catch {
-    return { imported: 0 }
+    return { imported: 0, folders: [] }
   }
 
   if (archive.format !== 'latexide-history' || !Array.isArray(archive.versions)) {
-    return { imported: 0 }
+    return { imported: 0, folders: [] }
   }
 
   const blobs = new Map<string, ArrayBuffer>()
@@ -208,19 +218,36 @@ export async function importHistory(
     }
   }
 
+  const folders = Array.isArray(archive.project?.folders) ? archive.project.folders : []
   const versionsToStore: Version[] = archive.versions.map((version) => ({
     ...version,
     id: newId(),
     projectId,
     files: Array.isArray(version.files) ? version.files : [],
+    folders: Array.isArray(version.folders) ? version.folders : [],
   }))
 
-  await db.transaction('rw', db.blobs, db.versions, async () => {
+  await db.transaction('rw', db.blobs, db.versions, db.folders, async () => {
     if (blobsToStore.length) await db.blobs.bulkPut(blobsToStore)
     if (versionsToStore.length) await db.versions.bulkPut(versionsToStore)
+    if (folders.length) {
+      await db.folders.bulkPut(folders.map((path) => ({ projectId, path, createdAt: Date.now() })))
+    }
   })
 
-  return { imported: versionsToStore.length, mainFile: archive.project?.mainFile }
+  return { imported: versionsToStore.length, mainFile: archive.project?.mainFile, folders: archive.project?.folders ?? [] }
+}
+
+export async function deleteProjectData(projectId: string): Promise<void> {
+  await db.transaction('rw', [db.projects, db.files, db.folders, db.builds, db.versions], async () => {
+    await db.projects.delete(projectId)
+    await db.files.where('projectId').equals(projectId).delete()
+    await db.folders.where('projectId').equals(projectId).delete()
+    await db.builds.delete(projectId)
+    await db.versions.where('projectId').equals(projectId).delete()
+  })
+  await db.ui.delete(`activeFile:${projectId}`)
+  await removeUnreferencedBlobs()
 }
 
 async function pruneAutoVersions(projectId: string): Promise<void> {

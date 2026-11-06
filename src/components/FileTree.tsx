@@ -12,6 +12,7 @@ type TreeNode = {
 
 type Props = {
   files: Record<string, ProjectFile>
+  folders: string[]
   activePath: string | null
   mainFile: string
   onOpen: (path: string) => void
@@ -19,11 +20,31 @@ type Props = {
   onDelete: (path: string) => void
   onSetMain: (path: string) => void
   onNewFile: () => void
+  onNewFolder: () => void
+  onNewFileInFolder: (folder: string) => void
+  onDeleteFolder: (folder: string) => void
   onImportZip: () => void
 }
 
-function buildTree(files: Record<string, ProjectFile>): TreeNode[] {
+function ensureFolder(root: TreeNode, path: string): void {
+  const parts = path.split('/').filter(Boolean)
+  let current = root
+  for (let i = 0; i < parts.length; i += 1) {
+    const name = parts[i]
+    const folderPath = parts.slice(0, i + 1).join('/')
+    let next = current.children.find((child) => child.name === name && child.kind === 'folder')
+    if (!next) {
+      next = { name, path: folderPath, kind: 'folder', children: [] }
+      current.children.push(next)
+    }
+    current = next
+  }
+}
+
+function buildTree(files: Record<string, ProjectFile>, folders: string[]): TreeNode[] {
   const root: TreeNode = { name: '', path: '', kind: 'folder', children: [] }
+
+  for (const folder of folders) ensureFolder(root, folder)
 
   for (const file of Object.values(files)) {
     const parts = file.path.split('/')
@@ -62,6 +83,7 @@ function iconFor(path: string): string {
 
 export function FileTree({
   files,
+  folders,
   activePath,
   mainFile,
   onOpen,
@@ -69,10 +91,13 @@ export function FileTree({
   onDelete,
   onSetMain,
   onNewFile,
+  onNewFolder,
+  onNewFileInFolder,
+  onDeleteFolder,
   onImportZip,
 }: Props) {
   const { t } = useTranslation()
-  const tree = useMemo(() => buildTree(files), [files])
+  const tree = useMemo(() => buildTree(files, folders), [files, folders])
 
   const renderNode = (node: TreeNode, depth: number) => {
     if (node.kind === 'folder') {
@@ -82,6 +107,10 @@ export function FileTree({
             <span className="tree-caret">▾</span>
             <span className="tree-icon">▸</span>
             <span className="tree-name" title={node.path}>{node.name}</span>
+            <span className="tree-actions" onClick={(event) => event.stopPropagation()}>
+              <button className="icon-button" title={t('files.newFileHere')} onClick={() => onNewFileInFolder(node.path)}>+</button>
+              <button className="icon-button" title={t('files.deleteFolder')} onClick={() => onDeleteFolder(node.path)}>✕</button>
+            </span>
           </div>
           {node.children.map((child) => renderNode(child, depth + 1))}
         </div>
@@ -126,6 +155,7 @@ export function FileTree({
       </div>
       <div className="sidebar-actions">
         <button className="small-button" onClick={onNewFile}>{t('files.newFile')}</button>
+        <button className="small-button" onClick={onNewFolder}>{t('files.newFolder')}</button>
         <button className="small-button" onClick={onImportZip}>{t('files.importZip')}</button>
       </div>
       <div className="tree" role="tree">

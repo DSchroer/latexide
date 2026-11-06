@@ -18,6 +18,12 @@ export type ProjectFile = {
   updatedAt: number
 }
 
+export type ProjectFolder = {
+  projectId: string
+  path: string
+  createdAt: number
+}
+
 export type BlobRecord = {
   hash: string
   kind: FileKind
@@ -44,6 +50,7 @@ export type Version = {
   mainFile: string
   manifestHash: string
   files: VersionFile[]
+  folders?: string[]
   size: number
 }
 
@@ -54,6 +61,7 @@ export type HistoryArchive = {
   project?: {
     name?: string
     mainFile?: string
+    folders?: string[]
   }
   versions: Version[]
 }

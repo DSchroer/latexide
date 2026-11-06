@@ -4,7 +4,8 @@ A local-first LaTeX editor that compiles in your browser. No account, no server,
 
 **Live:** https://dschroer.github.io/latexide/
 
-- File tree and Monaco editor
+- File tree with folders, nested files, and Monaco editor
+- Create/delete folders and delete whole projects when no longer needed
 - English/German interface with a language selector; the choice is saved in `localStorage`
 - Optional English (British) or German spell check in the editor, with a separate language selector
 - Import a project from a `.zip`, including a folder wrapper
@@ -68,7 +69,7 @@ By default **Export → Project ZIP (with history)** includes:
 
 ```text
 .history/
-  versions.json
+  versions.json      # version manifests, project mainFile and folders
   blobs/<sha256>
 ```
 

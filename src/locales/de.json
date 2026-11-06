@@ -36,7 +36,8 @@
     "exportWithoutHistory": "Projekt-ZIP (ohne Verlauf)",
     "exportWithoutHistoryHint": "Sauberes ZIP für Overleaf oder Weitergabe",
     "exportPdf": "PDF",
-    "more": "Mehr"
+    "more": "Mehr",
+    "newFolder": "Neuer Ordner"
   },
   "project": {
     "welcome": "Willkommen",
@@ -45,7 +46,10 @@
     "newFilePrompt": "Neuer Dateipfad",
     "renamePrompt": "Datei umbenennen",
     "deleteConfirm": "{{path}} löschen?",
-    "defaultFileName": "chapter.tex"
+    "defaultFileName": "chapter.tex",
+    "deleteProject": "Projekt löschen",
+    "deleteProjectConfirm": "Projekt \"{{name}}\" löschen? Dateien und lokaler Verlauf werden aus diesem Browser entfernt.",
+    "deleted": "Projekt gelöscht."
   },
   "files": {
     "title": "Dateien",
@@ -55,7 +59,13 @@
     "mainTitle": "Hauptdatei",
     "setMain": "Als Hauptdatei festlegen",
     "rename": "Umbenennen",
-    "delete": "Löschen"
+    "delete": "Löschen",
+    "newFolder": "+ Ordner",
+    "newFileHere": "Neue Datei in diesem Ordner",
+    "deleteFolder": "Ordner löschen",
+    "folderPrompt": "Neuer Ordnerpfad",
+    "folderExists": "Ein Ordner oder eine Datei mit diesem Namen existiert bereits.",
+    "folderDeleteConfirm": "{{path}} und die zugehörigen {{count}} Dateien löschen?"
   },
   "editor": {
     "loading": "Editor wird geladen…",
