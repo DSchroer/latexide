@@ -6,6 +6,7 @@ A local-first LaTeX editor that compiles in your browser. No account, no server,
 
 - File tree and Monaco editor
 - English/German interface with a language selector; the choice is saved in `localStorage`
+- Optional English (British) or German spell check in the editor, with a separate language selector
 - Import a project from a `.zip`, including a folder wrapper
 - Create and rename files; upload images into `IMAGES/`
 - Compile with a WebAssembly Tectonic engine (XeTeX + BibTeX)
@@ -21,6 +22,7 @@ A local-first LaTeX editor that compiles in your browser. No account, no server,
 |---|---|
 | [`glyphtex-engine`](https://www.npmjs.com/package/glyphtex-engine) | Tectonic (XeTeX, xdvipdfmx, BibTeX) compiled to WebAssembly |
 | Monaco | Editor, with small LaTeX and BibTeX grammars |
+| `nspell` + Hunspell dictionaries | English (British) and German spell check |
 | PDF.js 3.11 (legacy) | PDF preview; pinned for Safari 15.6 |
 | Dexie / IndexedDB | Project files and last build |
 | fflate | ZIP import/export and gzip decompression |
@@ -55,8 +57,12 @@ npm install
 npm run dev
 ```
 
-`predev` copies the engine and official package packs from `node_modules` into
-`public/`. Open http://127.0.0.1:5173/.
+`predev` copies the engine, official package packs, and spell-check dictionaries
+from `node_modules` into `public/`. Open http://127.0.0.1:5173/.
+
+The **ABC** button toggles spell check, and the adjacent selector chooses
+English (British) or German. Spell-check language is independent of the UI
+language because the document may be in a different language.
 
 Production build:
 

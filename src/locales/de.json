@@ -121,5 +121,13 @@
   "pwa": {
     "updateAvailable": "Eine neue Version ist verfügbar.",
     "reload": "Neu laden"
+  },
+  "spellcheck": {
+    "label": "Rechtschreibung",
+    "toggleOn": "Rechtschreibung aktivieren",
+    "toggleOff": "Rechtschreibung deaktivieren",
+    "language": "Sprache der Rechtschreibprüfung",
+    "issue": "Möglicher Rechtschreibfehler: {{word}}",
+    "source": "Rechtschreibung"
   }
 }

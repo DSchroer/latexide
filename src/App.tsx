@@ -17,6 +17,7 @@ import {
 } from './lib/paths'
 import type { Build, CompileFile, Diagnostic, Project, ProjectFile } from './types'
 import { useCompiler } from './hooks/useCompiler'
+import { useSpellcheck, type SpellLanguage } from './hooks/useSpellcheck'
 import { FileTree } from './components/FileTree'
 import { EditorPane } from './components/EditorPane'
 import { PdfPreview } from './components/PdfPreview'
@@ -108,6 +109,20 @@ export default function App() {
   const [toast, setToast] = useState<{ message: string; kind: 'info' | 'error' } | null>(null)
   const [online, setOnline] = useState(navigator.onLine)
   const [importing, setImporting] = useState(false)
+  const [spellcheckEnabled, setSpellcheckEnabled] = useState(() => {
+    try {
+      return localStorage.getItem('latexide.spellcheck') !== 'off'
+    } catch {
+      return true
+    }
+  })
+  const [spellLanguage, setSpellLanguage] = useState<SpellLanguage>(() => {
+    try {
+      return localStorage.getItem('latexide.spellLanguage') === 'de' ? 'de' : 'en'
+    } catch {
+      return 'en'
+    }
+  })
   const [offlineState, setOfflineState] = useState<'unknown' | 'idle' | 'working' | 'ready'>('unknown')
   const [offlineProgress, setOfflineProgress] = useState({ done: 0, total: 0 })
 
@@ -148,6 +163,22 @@ export default function App() {
     document.documentElement.lang = currentLanguage
     document.title = t('app.title')
   }, [currentLanguage, t])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('latexide.spellcheck', spellcheckEnabled ? 'on' : 'off')
+    } catch {
+      // Storage can be unavailable in private browsing modes.
+    }
+  }, [spellcheckEnabled])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('latexide.spellLanguage', spellLanguage)
+    } catch {
+      // Storage can be unavailable in private browsing modes.
+    }
+  }, [spellLanguage])
 
   useEffect(() => {
     if (!('caches' in window)) {
@@ -196,6 +227,8 @@ export default function App() {
   })
 
   const compileStatus = statusOverride ?? t(statusKey, statusParams)
+  const activeText = activePath && files[activePath]?.kind === 'text' ? files[activePath].text ?? '' : null
+  const spellcheckIssues = useSpellcheck(activeText, spellLanguage, spellcheckEnabled)
 
   const loadProject = useCallback(async (next: Project) => {
     const list = await db.files.where('projectId').equals(next.id).toArray()
@@ -582,6 +615,10 @@ export default function App() {
       `${base}tex-packs/index.json`,
       ...PACK_IDS.map((id) => `${base}tex-packs/pack-${id}.tar.gz`),
       `${base}tex-packs/thesis.tar.gz`,
+      `${base}dictionaries/en.aff`,
+      `${base}dictionaries/en.dic`,
+      `${base}dictionaries/de.aff`,
+      `${base}dictionaries/de.dic`,
     ]
 
     setOfflineState('working')
@@ -707,6 +744,23 @@ export default function App() {
           </button>
           <button className="small-button" onClick={() => void createFile()} disabled={!projectId}>{t('toolbar.newFile')}</button>
           <button className="small-button" onClick={() => imageInputRef.current?.click()} disabled={!projectId}>{t('toolbar.uploadImage')}</button>
+          <button
+            className={`small-button spell-toggle${spellcheckEnabled ? ' is-active' : ''}`}
+            onClick={() => setSpellcheckEnabled((value) => !value)}
+            title={t(spellcheckEnabled ? 'spellcheck.toggleOff' : 'spellcheck.toggleOn')}
+          >
+            ABC
+          </button>
+          <select
+            className="spell-lang-select"
+            value={spellLanguage}
+            onChange={(event) => setSpellLanguage(event.target.value === 'de' ? 'de' : 'en')}
+            aria-label={t('spellcheck.language')}
+            title={t('spellcheck.language')}
+          >
+            <option value="en">{t('language.en')}</option>
+            <option value="de">{t('language.de')}</option>
+          </select>
           <button className="small-button" onClick={() => setShowProblems((value) => !value)}>
             {t('toolbar.problems')}{errorCount > 0 ? ` (${errorCount})` : ''}
           </button>
@@ -783,6 +837,8 @@ export default function App() {
                 onMount={(editor) => {
                   editorRef.current = editor
                 }}
+                spellcheckIssues={spellcheckIssues}
+                spellcheckEnabled={spellcheckEnabled}
               />
             )}
             {activeFile?.kind === 'binary' && isImagePath(activeFile.path) && <ImageView file={activeFile} />}

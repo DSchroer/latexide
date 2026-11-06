@@ -6,6 +6,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)))
 const source = join(root, 'node_modules', 'glyphtex-engine', 'wasm')
 const engineDir = join(root, 'public', 'engine')
 const packsDir = join(root, 'public', 'tex-packs')
+const dictDir = join(root, 'public', 'dictionaries')
 
 async function exists(path) {
   try {
@@ -26,6 +27,7 @@ async function copyIfNeeded(from, to) {
 
 await mkdir(engineDir, { recursive: true })
 await mkdir(packsDir, { recursive: true })
+await mkdir(dictDir, { recursive: true })
 
 await copyIfNeeded(join(source, 'tectonic_wasm.wasm'), join(engineDir, 'tectonic_wasm.wasm'))
 await copyIfNeeded(join(source, 'tectonic-bundle.tar.gz'), join(engineDir, 'tectonic-bundle.tar.gz'))
@@ -38,4 +40,16 @@ for (const entry of await readdir(join(source, 'packs'))) {
   }
 }
 
+const dictionaries = [
+  ['dictionary-en-gb', 'en'],
+  ['dictionary-de', 'de'],
+]
+for (const [packageName, language] of dictionaries) {
+  const dictionaryDir = join(root, 'node_modules', packageName)
+  await copyIfNeeded(join(dictionaryDir, 'index.aff'), join(dictDir, `${language}.aff`))
+  await copyIfNeeded(join(dictionaryDir, 'index.dic'), join(dictDir, `${language}.dic`))
+  await copyIfNeeded(join(dictionaryDir, 'license'), join(dictDir, `${language}.license`))
+}
+
 console.log('TeX assets copied to public/engine and public/tex-packs')
+console.log('Spell-check dictionaries copied to public/dictionaries')

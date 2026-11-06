@@ -121,5 +121,13 @@
   "pwa": {
     "updateAvailable": "A new version is available.",
     "reload": "Reload"
+  },
+  "spellcheck": {
+    "label": "Spell check",
+    "toggleOn": "Enable spell check",
+    "toggleOff": "Disable spell check",
+    "language": "Spell-check language",
+    "issue": "Possible spelling mistake: {{word}}",
+    "source": "Spell check"
   }
 }

@@ -9,6 +9,7 @@ dist
 public/engine/
 public/tex-packs/*
 !public/tex-packs/thesis.tar.gz
+public/dictionaries/
 
 # TypeScript incremental artifacts
 *.tsbuildinfo

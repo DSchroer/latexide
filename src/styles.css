@@ -126,6 +126,23 @@ pre {
   font-size: 12px;
 }
 
+.spell-lang-select {
+  height: 30px;
+  padding: 0 4px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.spell-toggle.is-active {
+  border-color: rgba(110, 168, 254, 0.45);
+  background: rgba(110, 168, 254, 0.14);
+  color: var(--accent);
+  font-weight: 650;
+}
+
 .toolbar-actions {
   display: flex;
   align-items: center;
@@ -934,6 +951,10 @@ pre {
 
   .language-select {
     max-width: 82px;
+  }
+
+  .spell-lang-select {
+    max-width: 72px;
   }
 
   .engine-status {
