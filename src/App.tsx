@@ -243,6 +243,7 @@ export default function App() {
   const captureSnapshot = useCallback(async (kind: 'auto' | 'manual', label: string) => {
     const current = projectRef.current
     if (!current) return null
+    await Promise.all(Object.values(filesRef.current).map((file) => db.files.put(file)))
     const version = await createVersion(current.id, Object.values(filesRef.current), current.mainFile, kind, label)
     if (version) {
       setVersionCount(await db.versions.where('projectId').equals(current.id).count())
