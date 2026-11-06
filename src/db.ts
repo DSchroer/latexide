@@ -1,11 +1,13 @@
 import Dexie, { type Table } from 'dexie'
-import type { Build, Project, ProjectFile, UIState } from './types'
+import type { BlobRecord, Build, Project, ProjectFile, UIState, Version } from './types'
 
 class LatexIDEDatabase extends Dexie {
   projects!: Table<Project, string>
   files!: Table<ProjectFile, [string, string]>
   builds!: Table<Build, string>
   ui!: Table<UIState, string>
+  blobs!: Table<BlobRecord, string>
+  versions!: Table<Version, string>
 
   constructor() {
     super('latexide')
@@ -14,6 +16,10 @@ class LatexIDEDatabase extends Dexie {
       files: '[projectId+path], projectId, path',
       builds: 'projectId',
       ui: 'key',
+    })
+    this.version(2).stores({
+      blobs: 'hash',
+      versions: 'id, projectId, createdAt',
     })
   }
 }

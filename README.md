@@ -11,7 +11,8 @@ A local-first LaTeX editor that compiles in your browser. No account, no server,
 - Create and rename files; upload images into `IMAGES/`
 - Compile with a WebAssembly Tectonic engine (XeTeX + BibTeX)
 - PDF preview rendered with PDF.js
-- Download the project as a ZIP or the compiled PDF
+- Local version history with automatic snapshots, named checkpoints, and restore
+- Download the project as a ZIP (with or without `.history/`) or the compiled PDF
 - Autosave to IndexedDB, with the last PDF restored on reload
 - Installable PWA with an explicit “Offline” cache for the engine and packages
 - GitHub Pages deployment included
@@ -47,6 +48,35 @@ The app also patches `backend=biber` to `backend=bibtex` in the in-memory copy
 for the browser build; the file in the editor and exported ZIP is unchanged.
 `style=nature` works because `biblatex-nature` is in the thesis pack. If it is
 not available, `style=numeric` is part of the standard references pack.
+
+## Version history
+
+Every project keeps a local timeline in IndexedDB:
+
+- **Save** (or `Ctrl/Cmd+S`) creates a named checkpoint.
+- Autosave creates an implicit checkpoint after two minutes of inactivity, on
+  `visibilitychange`, and on page hide.
+- **History** shows the timeline; you can compare a version with the current
+  working copy, or restore it. Restoring first snapshots the current state.
+- Snapshots are content-addressed: unchanged images and text files are stored
+  once, so history does not multiply the project size by the number of versions.
+- The last 50 automatic versions are retained; manual checkpoints are kept.
+
+### ZIP exports
+
+By default **Export → Project ZIP (with history)** includes:
+
+```text
+.history/
+  versions.json
+  blobs/<sha256>
+```
+
+The `.history` folder contains all version manifests plus the deduplicated file
+contents. Importing that ZIP restores both the project and the timeline.
+
+**Export → Project ZIP (without history)** omits `.history/`, producing a clean
+ZIP for Overleaf or for sending to someone who only needs the current state.
 
 ## Local development
 

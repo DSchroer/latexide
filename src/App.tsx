@@ -15,7 +15,7 @@ import {
   stripCommonRoot,
   uniquePath,
 } from './lib/paths'
-import type { Build, CompileFile, Diagnostic, Project, ProjectFile } from './types'
+import type { Build, CompileFile, Diagnostic, Project, ProjectFile, Version } from './types'
 import { useCompiler } from './hooks/useCompiler'
 import { useSpellcheck, type SpellLanguage } from './hooks/useSpellcheck'
 import { FileTree } from './components/FileTree'
@@ -23,7 +23,11 @@ import { EditorPane } from './components/EditorPane'
 import { PdfPreview } from './components/PdfPreview'
 import { ProblemsPanel } from './components/ProblemsPanel'
 import { PwaUpdate } from './components/PwaUpdate'
+import { Menu } from './components/Menu'
+import { HistoryPanel } from './components/HistoryPanel'
+import { DiffPanel } from './components/DiffPanel'
 import ZipWorker from './workers/zip.worker?worker'
+import { createVersion, ensureInitialVersion, exportHistory, importHistory, restoreVersion } from './lib/versioning'
 
 type ZipEntry = { path: string; data: ArrayBuffer }
 
@@ -105,6 +109,10 @@ export default function App() {
   const [savedBuild, setSavedBuild] = useState<Build | null>(null)
   const [resultProjectId, setResultProjectId] = useState<string | null>(null)
   const [showProblems, setShowProblems] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [compareVersion, setCompareVersion] = useState<Version | null>(null)
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0)
+  const [versionCount, setVersionCount] = useState(0)
   const [mobileTab, setMobileTab] = useState<'files' | 'editor' | 'pdf'>('editor')
   const [toast, setToast] = useState<{ message: string; kind: 'info' | 'error' } | null>(null)
   const [online, setOnline] = useState(navigator.onLine)
@@ -137,6 +145,8 @@ export default function App() {
   const imageInputRef = useRef<HTMLInputElement | null>(null)
 
   const project = useMemo(() => projects.find((item) => item.id === projectId) ?? null, [projects, projectId])
+  const projectRef = useRef<Project | null>(null)
+  projectRef.current = project
 
   const notify = useCallback((message: string, kind: 'info' | 'error' = 'info') => {
     setToast({ message, kind })
@@ -230,6 +240,85 @@ export default function App() {
   const activeText = activePath && files[activePath]?.kind === 'text' ? files[activePath].text ?? '' : null
   const spellcheckIssues = useSpellcheck(activeText, spellLanguage, spellcheckEnabled)
 
+  const captureSnapshot = useCallback(async (kind: 'auto' | 'manual', label: string) => {
+    const current = projectRef.current
+    if (!current) return null
+    const version = await createVersion(current.id, Object.values(filesRef.current), current.mainFile, kind, label)
+    if (version) {
+      setVersionCount(await db.versions.where('projectId').equals(current.id).count())
+      setHistoryRefreshKey((value) => value + 1)
+    }
+    return version
+  }, [])
+
+  const saveCheckpoint = useCallback(
+    async (label?: string) => {
+      const current = projectRef.current
+      if (!current) return
+      try {
+        await captureSnapshot('manual', label?.trim() || t('history.checkpoint'))
+        notify(t('history.saved'))
+      } catch {
+        notify(t('history.saveFailed'), 'error')
+      }
+    },
+    [captureSnapshot, notify, t],
+  )
+
+  const saveCheckpointWithPrompt = async () => {
+    const label = window.prompt(t('history.labelPrompt'), t('history.checkpoint'))
+    if (label === null) return
+    await saveCheckpoint(label)
+  }
+
+  const openHistory = async () => {
+    try {
+      await captureSnapshot('auto', t('history.autosave'))
+    } catch {
+      // Still let the user inspect existing versions if storage is full.
+    }
+    setHistoryOpen(true)
+  }
+
+  const restoreHistory = async (version: Version) => {
+    const current = projectRef.current
+    if (!current) return
+    if (!window.confirm(t('history.restoreConfirm', { label: version.label }))) return
+
+    await captureSnapshot('auto', t('history.beforeRestore'))
+    const restored = await restoreVersion(current.id, version)
+    const map: Record<string, ProjectFile> = {}
+    for (const file of restored) map[file.path] = file
+    filesRef.current = map
+
+    const nextActive = version.mainFile && map[version.mainFile] ? version.mainFile : Object.keys(map)[0] ?? null
+    setFiles(map)
+    setOpenPaths((previous) => {
+      const kept = previous.filter((path) => map[path])
+      if (nextActive && !kept.includes(nextActive)) kept.push(nextActive)
+      return kept
+    })
+    setActivePath(nextActive)
+    setPdf(null)
+    setSavedBuild(null)
+    setResultProjectId(null)
+    setShowProblems(false)
+    setProjects((previous) =>
+      previous.map((item) =>
+        item.id === current.id ? { ...item, mainFile: version.mainFile, updatedAt: Date.now() } : item,
+      ),
+    )
+    resetOnNextCompile.current = true
+
+    await createVersion(current.id, restored, version.mainFile, 'restore', t('history.restoredFrom', { label: version.label }))
+    setVersionCount(await db.versions.where('projectId').equals(current.id).count())
+    setHistoryRefreshKey((value) => value + 1)
+    setHistoryOpen(false)
+    setCompareVersion(null)
+    notify(t('history.restored', { label: version.label }))
+  }
+
+
   const loadProject = useCallback(async (next: Project) => {
     const list = await db.files.where('projectId').equals(next.id).toArray()
     const map: Record<string, ProjectFile> = {}
@@ -244,6 +333,8 @@ export default function App() {
           : Object.keys(map)[0] ?? null
 
     const build = await db.builds.get(next.id)
+    await ensureInitialVersion(next.id, list, next.mainFile, t('history.initial'))
+    setVersionCount(await db.versions.where('projectId').equals(next.id).count())
 
     setProjectId(next.id)
     setFiles(map)
@@ -285,15 +376,26 @@ export default function App() {
       void Promise.all(list.map((file) => db.files.put(file)))
     }
     const onVisibility = () => {
-      if (document.visibilityState === 'hidden') flush()
+      if (document.visibilityState === 'hidden') {
+        flush()
+        void captureSnapshot('auto', t('history.autosave'))
+      }
     }
+    window.addEventListener('pagehide', onVisibility)
     document.addEventListener('visibilitychange', onVisibility)
-    window.addEventListener('pagehide', flush)
     return () => {
       document.removeEventListener('visibilitychange', onVisibility)
-      window.removeEventListener('pagehide', flush)
+      window.removeEventListener('pagehide', onVisibility)
     }
-  }, [])
+  }, [captureSnapshot, t])
+
+  useEffect(() => {
+    if (!projectId) return
+    const timer = window.setTimeout(() => {
+      void captureSnapshot('auto', t('history.autosave'))
+    }, 2 * 60 * 1000)
+    return () => window.clearTimeout(timer)
+  }, [captureSnapshot, files, projectId, t])
 
   const queueSave = useCallback((file: ProjectFile) => {
     const key = `${file.projectId}:${file.path}`
@@ -463,7 +565,7 @@ export default function App() {
     if (usedBibtex) {
       notify(t('toast.bibtex'))
     }
-  }, [compile, notify, project])
+  }, [compile, notify, project, t])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -474,13 +576,12 @@ export default function App() {
       }
       if (event.key.toLowerCase() === 's') {
         event.preventDefault()
-        void Promise.all(Object.values(filesRef.current).map((file) => db.files.put(file)))
-        notify(t('toast.saved'))
+        void saveCheckpoint()
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [notify, runCompile])
+  }, [runCompile, saveCheckpoint])
 
   const importZip = async (file: File) => {
     setImporting(true)
@@ -498,15 +599,18 @@ export default function App() {
         data: byOriginal.get(originalPaths[index]) ?? new ArrayBuffer(0),
       }))
 
+      const historyEntries = strippedData.filter((entry) => entry.path.startsWith('.history/'))
+      const projectEntries = strippedData.filter((entry) => !entry.path.startsWith('.history/'))
+
       const decoder = new TextDecoder('utf-8', { fatal: false })
       const textContents: Record<string, string> = {}
-      for (const entry of strippedData) {
+      for (const entry of projectEntries) {
         if (isTextPath(entry.path)) {
           textContents[entry.path] = decoder.decode(new Uint8Array(entry.data)).replace(/^\uFEFF/, '')
         }
       }
 
-      const records: Array<Omit<ProjectFile, 'projectId' | 'updatedAt'>> = strippedData.map((entry) => {
+      const records: Array<Omit<ProjectFile, 'projectId' | 'updatedAt'>> = projectEntries.map((entry) => {
         const text = textContents[entry.path]
         return text !== undefined
           ? { path: entry.path, kind: 'text', text, size: text.length }
@@ -515,7 +619,20 @@ export default function App() {
 
       const name = file.name.replace(/\.zip$/i, '') || (root ? root : t('project.imported'))
       const created = await createProject(name, records)
-      const detectedMain = detectMainFile(records.map((record) => record.path), textContents)
+
+      let importedHistory: { imported: number; mainFile?: string } = { imported: 0 }
+      if (historyEntries.length > 0) {
+        try {
+          importedHistory = await importHistory(created.id, historyEntries)
+        } catch {
+          // A malformed history must not prevent the project files from loading.
+        }
+      }
+
+      const detectedMain =
+        importedHistory.mainFile && records.some((record) => record.path === importedHistory.mainFile)
+          ? importedHistory.mainFile
+          : detectMainFile(records.map((record) => record.path), textContents)
       if (detectedMain && detectedMain !== created.mainFile) {
         await db.projects.update(created.id, { mainFile: detectedMain, updatedAt: Date.now() })
         created.mainFile = detectedMain
@@ -583,17 +700,30 @@ export default function App() {
     editor.focus()
   }
 
-  const downloadZip = () => {
+  const downloadZip = async (includeHistory = true) => {
     if (!project) return
-    const entries: Record<string, Uint8Array> = {}
-    for (const file of Object.values(filesRef.current)) {
-      entries[file.path] =
-        file.kind === 'text'
-          ? strToU8(file.text ?? '')
-          : new Uint8Array(file.data ?? new ArrayBuffer(0))
+    try {
+      if (includeHistory) {
+        await captureSnapshot('auto', t('history.autosave'))
+      }
+
+      const entries: Record<string, Uint8Array> = {}
+      for (const file of Object.values(filesRef.current)) {
+        entries[file.path] =
+          file.kind === 'text'
+            ? strToU8(file.text ?? '')
+            : new Uint8Array(file.data ?? new ArrayBuffer(0))
+      }
+
+      if (includeHistory) {
+        Object.assign(entries, await exportHistory(project))
+      }
+
+      const archive = zipSync(entries, { level: 6 })
+      downloadBytes(archive, `${safeFilename(project.name)}.zip`, 'application/zip')
+    } catch (error) {
+      notify(error instanceof Error ? `${t('toast.exportFailed')} ${error.message}` : t('toast.exportFailed'), 'error')
     }
-    const archive = zipSync(entries, { level: 6 })
-    downloadBytes(archive, `${safeFilename(project.name)}.zip`, 'application/zip')
   }
 
   const downloadPdf = () => {
@@ -739,11 +869,48 @@ export default function App() {
         <button className="icon-button" onClick={() => void createBlankProject()} title={t('toolbar.newProject')}>+</button>
 
         <div className="toolbar-actions">
-          <button className="small-button" onClick={() => zipInputRef.current?.click()} disabled={importing}>
-            {importing ? t('toolbar.importing') : t('toolbar.importZip')}
+          <Menu
+            label={t('toolbar.file')}
+            items={[
+              { label: t('toolbar.newFile'), onClick: () => void createFile(), disabled: !projectId },
+              { label: t('toolbar.uploadImage'), onClick: () => imageInputRef.current?.click(), disabled: !projectId },
+              { label: importing ? t('toolbar.importing') : t('toolbar.importZip'), onClick: () => zipInputRef.current?.click(), disabled: importing },
+            ]}
+          />
+
+          <button className="small-button" onClick={() => void saveCheckpoint()} disabled={!project} title={t('toolbar.saveTitle')}>
+            {t('toolbar.save')}
           </button>
-          <button className="small-button" onClick={() => void createFile()} disabled={!projectId}>{t('toolbar.newFile')}</button>
-          <button className="small-button" onClick={() => imageInputRef.current?.click()} disabled={!projectId}>{t('toolbar.uploadImage')}</button>
+
+          <button className="small-button" onClick={() => void openHistory()} disabled={!project} title={t('toolbar.historyTitle')}>
+            {t('toolbar.history')}{versionCount > 0 ? ` (${versionCount})` : ''}
+          </button>
+
+          <Menu
+            label={t('toolbar.export')}
+            align="left"
+            items={[
+              {
+                label: t('toolbar.exportWithHistory'),
+                hint: t('toolbar.exportWithHistoryHint'),
+                onClick: () => void downloadZip(true),
+                disabled: !project,
+              },
+              {
+                label: t('toolbar.exportWithoutHistory'),
+                hint: t('toolbar.exportWithoutHistoryHint'),
+                onClick: () => void downloadZip(false),
+                disabled: !project,
+              },
+              'separator',
+              { label: t('toolbar.exportPdf'), onClick: downloadPdf, disabled: !pdf },
+            ]}
+          />
+
+          <button className="primary-button" onClick={runCompile} disabled={isCompiling || !project?.mainFile}>
+            {isCompiling ? t('toolbar.compiling') : t('toolbar.compile')}
+          </button>
+
           <button
             className={`small-button spell-toggle${spellcheckEnabled ? ' is-active' : ''}`}
             onClick={() => setSpellcheckEnabled((value) => !value)}
@@ -761,21 +928,28 @@ export default function App() {
             <option value="en">{t('language.en')}</option>
             <option value="de">{t('language.de')}</option>
           </select>
-          <button className="small-button" onClick={() => setShowProblems((value) => !value)}>
-            {t('toolbar.problems')}{errorCount > 0 ? ` (${errorCount})` : ''}
-          </button>
-          <button className="small-button" onClick={() => void prepareOffline()} disabled={offlineState === 'working'} title={t('toolbar.cacheTitle')}>
-            {offlineState === 'working'
-              ? t('toolbar.caching', { done: offlineProgress.done, total: offlineProgress.total })
-              : offlineState === 'ready'
-                ? t('toolbar.offlineReady')
-                : t('toolbar.offline')}
-          </button>
-          <button className="primary-button" onClick={runCompile} disabled={isCompiling || !project?.mainFile}>
-            {isCompiling ? t('toolbar.compiling') : t('toolbar.compile')}
-          </button>
-          <button className="small-button" onClick={downloadZip} disabled={!project}>{t('toolbar.zip')}</button>
-          <button className="small-button" onClick={downloadPdf} disabled={!pdf}>{t('toolbar.pdf')}</button>
+
+          <Menu
+            label={t('toolbar.more')}
+            align="right"
+            items={[
+              {
+                label: `${t('toolbar.problems')}${errorCount > 0 ? ` (${errorCount})` : ''}`,
+                onClick: () => setShowProblems((value) => !value),
+              },
+              {
+                label:
+                  offlineState === 'working'
+                    ? t('toolbar.caching', { done: offlineProgress.done, total: offlineProgress.total })
+                    : offlineState === 'ready'
+                      ? t('toolbar.offlineReady')
+                      : t('toolbar.offline'),
+                hint: t('toolbar.cacheTitle'),
+                onClick: () => void prepareOffline(),
+                disabled: offlineState === 'working',
+              },
+            ]}
+          />
         </div>
 
         <div className={`engine-status${compileState === 'error' ? ' is-error' : ''}${!online ? ' is-offline' : ''}`} title={compileStatus}>
@@ -856,6 +1030,33 @@ export default function App() {
           unsupported={displayUnsupported}
           onOpen={openDiagnostic}
           onClose={() => setShowProblems(false)}
+        />
+      )}
+
+      {project && (
+        <HistoryPanel
+          project={project}
+          open={historyOpen}
+          refreshKey={historyRefreshKey}
+          onClose={() => {
+            setHistoryOpen(false)
+            setCompareVersion(null)
+          }}
+          onRestore={restoreHistory}
+          onCompare={(version) => {
+            setCompareVersion(version)
+            setHistoryOpen(false)
+          }}
+          onCheckpoint={saveCheckpointWithPrompt}
+        />
+      )}
+
+      {project && compareVersion && (
+        <DiffPanel
+          projectId={project.id}
+          version={compareVersion}
+          files={files}
+          onClose={() => setCompareVersion(null)}
         />
       )}
 

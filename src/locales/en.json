@@ -24,7 +24,19 @@
     "offline": "Offline",
     "offlineReady": "Offline ✓",
     "caching": "Caching {{done}}/{{total}}",
-    "cacheTitle": "Cache the TeX engine for offline use"
+    "cacheTitle": "Cache the TeX engine for offline use",
+    "file": "File",
+    "save": "Save",
+    "saveTitle": "Save a checkpoint (Ctrl/Cmd+S)",
+    "history": "History",
+    "historyTitle": "Open version history",
+    "export": "Export",
+    "exportWithHistory": "Project ZIP (with history)",
+    "exportWithHistoryHint": "Includes the .history folder",
+    "exportWithoutHistory": "Project ZIP (without history)",
+    "exportWithoutHistoryHint": "Clean ZIP for Overleaf or sharing",
+    "exportPdf": "PDF",
+    "more": "More"
   },
   "project": {
     "welcome": "Welcome",
@@ -116,7 +128,8 @@
     "unzipFailed": "Could not unzip the file.",
     "mainSet": "{{name}} is now the main file.",
     "importedRoot_one": "Imported {{count}} file from {{root}}.",
-    "importedRoot_other": "Imported {{count}} files from {{root}}."
+    "importedRoot_other": "Imported {{count}} files from {{root}}.",
+    "exportFailed": "Export failed."
   },
   "pwa": {
     "updateAvailable": "A new version is available.",
@@ -129,5 +142,40 @@
     "language": "Spell-check language",
     "issue": "Possible spelling mistake: {{word}}",
     "source": "Spell check"
+  },
+  "history": {
+    "title": "Version history",
+    "subtitle": "{{name}} · local snapshots",
+    "initial": "Initial version",
+    "auto": "Autosave",
+    "autosave": "Autosave",
+    "checkpoint": "Checkpoint",
+    "labelPrompt": "Name this version",
+    "saved": "Checkpoint saved.",
+    "beforeRestore": "Before restore",
+    "restore": "Restore",
+    "restoreConfirm": "Restore \"{{label}}\"? The current state will be saved as a new version first.",
+    "restored": "Restored {{label}}.",
+    "restoredFrom": "Restored from {{label}}",
+    "current": "Current",
+    "empty": "No versions yet.",
+    "fileCount_one": "{{count}} file",
+    "fileCount_other": "{{count}} files",
+    "close": "Close",
+    "exportHint": "Project ZIPs include .history. Use “Export without history” for a clean copy.",
+    "kind": {
+      "initial": "Initial",
+      "auto": "Auto",
+      "manual": "Manual",
+      "import": "Import",
+      "restore": "Restore"
+    },
+    "compare": "Compare",
+    "diffTitle": "Compare versions",
+    "noChanges": "No changes in this version.",
+    "binaryChange": "Binary file changed. Open the version or restore it to inspect the content.",
+    "compareHint": "Read-only comparison between this version and the current working copy.",
+    "saveFailed": "Could not save a checkpoint.",
+    "restoreFailed": "Could not restore this version."
   }
 }

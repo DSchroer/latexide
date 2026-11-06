@@ -24,7 +24,19 @@
     "offline": "Offline",
     "offlineReady": "Offline ✓",
     "caching": "Speichere {{done}}/{{total}}",
-    "cacheTitle": "TeX-Engine für die Offline-Nutzung zwischenspeichern"
+    "cacheTitle": "TeX-Engine für die Offline-Nutzung zwischenspeichern",
+    "file": "Datei",
+    "save": "Speichern",
+    "saveTitle": "Checkpoint speichern (Strg/Cmd+S)",
+    "history": "Verlauf",
+    "historyTitle": "Versionsverlauf öffnen",
+    "export": "Export",
+    "exportWithHistory": "Projekt-ZIP (mit Verlauf)",
+    "exportWithHistoryHint": "Enthält den Ordner .history",
+    "exportWithoutHistory": "Projekt-ZIP (ohne Verlauf)",
+    "exportWithoutHistoryHint": "Sauberes ZIP für Overleaf oder Weitergabe",
+    "exportPdf": "PDF",
+    "more": "Mehr"
   },
   "project": {
     "welcome": "Willkommen",
@@ -116,7 +128,8 @@
     "unzipFailed": "Die ZIP-Datei konnte nicht entpackt werden.",
     "mainSet": "{{name}} ist jetzt die Hauptdatei.",
     "importedRoot_one": "{{count}} Datei aus {{root}} importiert.",
-    "importedRoot_other": "{{count}} Dateien aus {{root}} importiert."
+    "importedRoot_other": "{{count}} Dateien aus {{root}} importiert.",
+    "exportFailed": "Export fehlgeschlagen."
   },
   "pwa": {
     "updateAvailable": "Eine neue Version ist verfügbar.",
@@ -129,5 +142,40 @@
     "language": "Sprache der Rechtschreibprüfung",
     "issue": "Möglicher Rechtschreibfehler: {{word}}",
     "source": "Rechtschreibung"
+  },
+  "history": {
+    "title": "Versionsverlauf",
+    "subtitle": "{{name}} · lokale Snapshots",
+    "initial": "Erste Version",
+    "auto": "Automatisch",
+    "autosave": "Automatisch gespeichert",
+    "checkpoint": "Checkpoint",
+    "labelPrompt": "Version benennen",
+    "saved": "Checkpoint gespeichert.",
+    "beforeRestore": "Vor Wiederherstellung",
+    "restore": "Wiederherstellen",
+    "restoreConfirm": "\"{{label}}\" wiederherstellen? Der aktuelle Stand wird zuvor als neue Version gespeichert.",
+    "restored": "{{label}} wiederhergestellt.",
+    "restoredFrom": "Wiederhergestellt aus {{label}}",
+    "current": "Aktuell",
+    "empty": "Noch keine Versionen.",
+    "fileCount_one": "{{count}} Datei",
+    "fileCount_other": "{{count}} Dateien",
+    "close": "Schließen",
+    "exportHint": "Projekt-ZIPs enthalten .history. Für eine saubere Kopie „Export ohne Verlauf“ verwenden.",
+    "kind": {
+      "initial": "Initial",
+      "auto": "Auto",
+      "manual": "Manuell",
+      "import": "Import",
+      "restore": "Wiederherstellung"
+    },
+    "compare": "Vergleichen",
+    "diffTitle": "Versionen vergleichen",
+    "noChanges": "Keine Änderungen in dieser Version.",
+    "binaryChange": "Binärdatei geändert. Öffne die Version oder stelle sie wieder her, um den Inhalt zu prüfen.",
+    "compareHint": "Schreibgeschützter Vergleich zwischen dieser Version und dem aktuellen Arbeitsstand.",
+    "saveFailed": "Checkpoint konnte nicht gespeichert werden.",
+    "restoreFailed": "Diese Version konnte nicht wiederhergestellt werden."
   }
 }

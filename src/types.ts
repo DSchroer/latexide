@@ -18,6 +18,46 @@ export type ProjectFile = {
   updatedAt: number
 }
 
+export type BlobRecord = {
+  hash: string
+  kind: FileKind
+  text?: string
+  data?: ArrayBuffer
+  size: number
+}
+
+export type VersionFile = {
+  path: string
+  kind: FileKind
+  hash: string
+  size: number
+}
+
+export type VersionKind = 'initial' | 'auto' | 'manual' | 'import' | 'restore'
+
+export type Version = {
+  id: string
+  projectId: string
+  createdAt: number
+  label: string
+  kind: VersionKind
+  mainFile: string
+  manifestHash: string
+  files: VersionFile[]
+  size: number
+}
+
+export type HistoryArchive = {
+  format: 'latexide-history'
+  version: 1
+  exportedAt: string
+  project?: {
+    name?: string
+    mainFile?: string
+  }
+  versions: Version[]
+}
+
 export type Diagnostic = {
   severity: 'error' | 'warning' | 'info'
   file: string | null
