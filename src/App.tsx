@@ -55,7 +55,19 @@ function ImageView({ file }: { file: ProjectFile }) {
   const [url, setUrl] = useState('')
 
   useEffect(() => {
-    const blob = new Blob([file.data ?? new ArrayBuffer(0)])
+    const mimes: Record<string, string> = {
+      png: 'image/png',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      gif: 'image/gif',
+      webp: 'image/webp',
+      bmp: 'image/bmp',
+      avif: 'image/avif',
+      svg: 'image/svg+xml',
+      ico: 'image/x-icon',
+    }
+    const mime = mimes[extname(file.path)] ?? 'application/octet-stream'
+    const blob = new Blob([file.data ?? new ArrayBuffer(0)], { type: mime })
     const next = URL.createObjectURL(blob)
     setUrl(next)
     return () => URL.revokeObjectURL(next)
@@ -87,6 +99,7 @@ export default function App() {
   const [activePath, setActivePath] = useState<string | null>(null)
   const [pdf, setPdf] = useState<ArrayBuffer | null>(null)
   const [savedBuild, setSavedBuild] = useState<Build | null>(null)
+  const [resultProjectId, setResultProjectId] = useState<string | null>(null)
   const [showProblems, setShowProblems] = useState(false)
   const [mobileTab, setMobileTab] = useState<'files' | 'editor' | 'pdf'>('editor')
   const [toast, setToast] = useState<{ message: string; kind: 'info' | 'error' } | null>(null)
@@ -152,6 +165,7 @@ export default function App() {
     onResult: async (result) => {
       const pid = projectIdRef.current
       if (!pid) return
+      setResultProjectId(pid)
       if (result.pdf) {
         setPdf(result.pdf)
         const build: Build = {
@@ -192,6 +206,7 @@ export default function App() {
     setActivePath(initial)
     setSavedBuild(build ?? null)
     setPdf(build?.pdf ?? null)
+    setResultProjectId(null)
     setShowProblems(Boolean(build?.diagnostics.some((item) => item.severity === 'error')))
     resetOnNextCompile.current = true
     await setUISetting('activeProjectId', next.id)
@@ -331,6 +346,7 @@ export default function App() {
     })
     setOpenPaths((previous) => previous.map((path) => (path === oldPath ? newPath : path)))
     setActivePath((current) => (current === oldPath ? newPath : current))
+    resetOnNextCompile.current = true
     if (project.mainFile === oldPath) {
       setProjects((previous) => previous.map((item) => (item.id === project.id ? { ...item, mainFile: newPath } : item)))
     }
@@ -357,6 +373,7 @@ export default function App() {
       if (activePath === path) setActivePath(next[next.length - 1] ?? null)
       return next
     })
+    resetOnNextCompile.current = true
   }
 
   const setMainFile = async (path: string) => {
@@ -607,8 +624,11 @@ export default function App() {
   }
 
   const activeFile = activePath ? files[activePath] ?? null : null
-  const displayDiagnostics = compilerDiagnostics.length > 0 ? compilerDiagnostics : savedBuild?.diagnostics ?? []
-  const displayLog = compilerLog || savedBuild?.log || ''
+  const displayDiagnostics = resultProjectId === projectId && compilerDiagnostics.length > 0
+    ? compilerDiagnostics
+    : savedBuild?.diagnostics ?? []
+  const displayLog = resultProjectId === projectId && compilerLog ? compilerLog : savedBuild?.log || ''
+  const displayUnsupported = resultProjectId === projectId ? unsupported : []
   const isCompiling = compileState === 'loading' || compileState === 'compiling'
   const errorCount = displayDiagnostics.filter((item) => item.severity === 'error').length
 
@@ -734,6 +754,7 @@ export default function App() {
             {activeFile?.kind === 'text' && (
               <EditorPane
                 path={activeFile.path}
+                modelPath={`${projectId ?? 'project'}/${activeFile.path}`}
                 value={activeFile.text ?? ''}
                 onChange={(text) => updateFileText(activeFile.path, text)}
                 onMount={(editor) => {
@@ -753,7 +774,7 @@ export default function App() {
         <ProblemsPanel
           diagnostics={displayDiagnostics}
           log={displayLog}
-          unsupported={unsupported}
+          unsupported={displayUnsupported}
           onOpen={openDiagnostic}
           onClose={() => setShowProblems(false)}
         />

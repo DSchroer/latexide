@@ -3,16 +3,17 @@ import { languageForPath } from '../lib/paths'
 
 type Props = {
   path: string
+  modelPath?: string
   value: string
   onChange: (value: string) => void
   onMount: OnMount
 }
 
-export function EditorPane({ path, value, onChange, onMount }: Props) {
+export function EditorPane({ path, modelPath, value, onChange, onMount }: Props) {
   return (
     <div className="editor-wrap">
       <Editor
-        path={path}
+        path={modelPath ?? path}
         language={languageForPath(path)}
         value={value}
         onChange={(next) => onChange(next ?? '')}
