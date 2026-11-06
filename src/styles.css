@@ -1,19 +1,19 @@
 :root {
-  --bg: #14171c;
-  --panel: #1c2027;
-  --panel-2: #222833;
-  --panel-3: #2a313d;
-  --border: #303845;
-  --border-strong: #3d4757;
-  --text: #e6e9ef;
-  --muted: #8b95a7;
-  --faint: #606b7d;
-  --accent: #6ea8fe;
-  --accent-strong: #3d8bfd;
+  --bg: #140d13;
+  --panel: #1e141c;
+  --panel-2: #281a25;
+  --panel-3: #34212f;
+  --border: #3b2635;
+  --border-strong: #55344b;
+  --text: #f8edf5;
+  --muted: #b39aae;
+  --faint: #7d6377;
+  --accent: #f472b6;
+  --accent-strong: #db2777;
   --success: #7ee787;
   --warning: #e3b341;
   --danger: #ff7b72;
-  --shadow: 0 18px 50px rgba(0, 0, 0, 0.38);
+  --shadow: 0 18px 50px rgba(20, 0, 14, 0.5);
   color-scheme: dark;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
@@ -92,7 +92,7 @@ pre {
   width: 30px;
   height: 30px;
   border-radius: 9px;
-  background: linear-gradient(145deg, #2f6fed, #1f4fbd);
+  background: linear-gradient(145deg, #f472b6, #be185d);
   color: white;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 20px;
@@ -137,8 +137,8 @@ pre {
 }
 
 .spell-toggle.is-active {
-  border-color: rgba(110, 168, 254, 0.45);
-  background: rgba(110, 168, 254, 0.14);
+  border-color: rgba(244, 114, 182, 0.45);
+  background: rgba(244, 114, 182, 0.14);
   color: var(--accent);
   font-weight: 650;
 }
@@ -172,15 +172,15 @@ pre {
 }
 
 .primary-button {
-  border-color: #2f6fed;
-  background: linear-gradient(180deg, #3d8bfd, #2f6fed);
+  border-color: #db2777;
+  background: linear-gradient(180deg, #f472b6, #db2777);
   color: white;
   font-weight: 600;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.16) inset;
 }
 
 .primary-button:hover:not(:disabled) {
-  background: linear-gradient(180deg, #5b9cff, #3d8bfd);
+  background: linear-gradient(180deg, #f9a8d4, #ec4899);
 }
 
 .icon-button {
@@ -199,7 +199,7 @@ pre {
 
 .icon-button.is-active {
   color: var(--accent);
-  background: rgba(110, 168, 254, 0.12);
+  background: rgba(244, 114, 182, 0.12);
 }
 
 .engine-status {
@@ -333,7 +333,7 @@ pre {
 }
 
 .tree-file.is-active {
-  background: rgba(110, 168, 254, 0.14);
+  background: rgba(244, 114, 182, 0.14);
   color: var(--text);
   box-shadow: inset 2px 0 0 var(--accent);
 }
@@ -363,7 +363,7 @@ pre {
 }
 
 .file-icon.ext-tex {
-  background: rgba(110, 168, 254, 0.16);
+  background: rgba(244, 114, 182, 0.16);
   color: var(--accent);
 }
 
@@ -658,14 +658,45 @@ pre {
 }
 
 .preview-scroll {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
   flex: 1;
   min-height: 0;
   padding: 14px;
   overflow: auto;
-  background: #101216;
+  background: #0f0a0e;
+}
+
+.pdf-pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  min-height: 100%;
+}
+
+.pdf-page-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+}
+
+.pdf-page-label {
+  color: var(--faint);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.pdf-page {
+  flex: 0 0 auto;
+  background: white;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+
+.pdf-page canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .pdf-canvas {
@@ -1219,7 +1250,7 @@ pre {
 
 .history-kind.kind-manual {
   color: var(--accent);
-  background: rgba(110, 168, 254, 0.12);
+  background: rgba(244, 114, 182, 0.12);
 }
 
 .history-kind.kind-import {
