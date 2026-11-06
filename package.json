@@ -1,0 +1,44 @@
+{
+  "name": "latexide",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A local-first LaTeX IDE in the browser",
+  "scripts": {
+    "predev": "npm run assets",
+    "dev": "vite",
+    "prebuild": "npm run assets",
+    "build": "tsc --noEmit -p tsconfig.app.json && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.app.json --pretty false",
+    "assets": "node scripts/copy-assets.mjs",
+    "thesis-pack": "bash scripts/build-thesis-pack.sh",
+    "test:thesis": "node scripts/test-thesis.mjs"
+  },
+  "keywords": [
+    "latex",
+    "wasm",
+    "tectonic",
+    "pwa"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@monaco-editor/react": "^4.6.0",
+    "dexie": "^4.4.7",
+    "fflate": "^0.8.2",
+    "glyphtex-engine": "^0.1.4",
+    "monaco-editor": "^0.45.0",
+    "pdfjs-dist": "^3.11.174",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "vite-plugin-pwa": "^0.20.5"
+  }
+}

@@ -1,0 +1,16 @@
+node_modules
+dist
+.vite
+.DS_Store
+*.local
+*.log
+
+# Generated from node_modules by `npm run assets` (and in CI).
+public/engine/
+public/tex-packs/*
+!public/tex-packs/thesis.tar.gz
+
+# TypeScript incremental artifacts
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
