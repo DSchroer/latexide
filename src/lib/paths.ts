@@ -104,6 +104,7 @@ export function stripCommonRoot(paths: string[]): { paths: string[]; root: strin
 }
 
 export function withLineNumbersForDisplay(path: string | null, line: number | null): string {
-  const where = path ? basename(path) : 'document'
+  const where = path ? basename(path) : ''
+  if (!where) return ''
   return line ? `${where}:${line}` : where
 }

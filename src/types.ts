@@ -65,6 +65,6 @@ export type WorkerRequest =
 
 export type WorkerResponse =
   | { type: 'ready' }
-  | { type: 'status'; message: string }
+  | { type: 'status'; key: string; params?: Record<string, string | number> }
   | CompileResultMessage
   | { type: 'error'; message: string; log?: string }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { strToU8, zipSync } from 'fflate'
 import type { editor as MonacoEditor } from 'monaco-editor'
 import { createProject, db, ensureSeedProject, getUISetting, saveProject, setUISetting } from './db'
@@ -28,10 +29,10 @@ type ZipEntry = { path: string; data: ArrayBuffer }
 const OFFLINE_CACHE = 'tex-engine-v1'
 const PACK_IDS = [
   'writing', 'figures', 'boxes', 'review', 'science', 'tables-plus', 'references', 'drafting',
-  'algorithms', 'journal-classes', 'beamer-themes', 'fonts-latinmodern', 'exams', 'symbols', 'opentype-fonts',
+  'algorithms', 'journal-classes', 'beamer-themes', 'fonts-latinmodern', 'exams', 'symbols', 'opentype-fonts', 'icons',
 ]
 
-function unzipInWorker(buffer: ArrayBuffer): Promise<ZipEntry[]> {
+function unzipInWorker(buffer: ArrayBuffer, failureMessage = 'Could not unzip the file.'): Promise<ZipEntry[]> {
   return new Promise((resolve, reject) => {
     const worker = new ZipWorker()
     worker.onmessage = (event: MessageEvent<{ type: 'done'; files: ZipEntry[] } | { type: 'error'; message: string }>) => {
@@ -41,7 +42,7 @@ function unzipInWorker(buffer: ArrayBuffer): Promise<ZipEntry[]> {
     }
     worker.onerror = (event) => {
       worker.terminate()
-      reject(new Error(event.message || 'Could not unzip the file.'))
+      reject(new Error(event.message || failureMessage))
     }
     worker.postMessage({ type: 'unzip', buffer, skipBuildArtifacts: true }, [buffer])
   })
@@ -92,6 +93,8 @@ function BinaryView({ file }: { file: ProjectFile }) {
 }
 
 export default function App() {
+  const { t, i18n } = useTranslation()
+  const currentLanguage = i18n.resolvedLanguage?.startsWith('de') ? 'de' : 'en'
   const [projects, setProjects] = useState<Project[]>([])
   const [projectId, setProjectId] = useState<string | null>(null)
   const [files, setFiles] = useState<Record<string, ProjectFile>>({})
@@ -142,6 +145,11 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    document.documentElement.lang = currentLanguage
+    document.title = t('app.title')
+  }, [currentLanguage, t])
+
+  useEffect(() => {
     if (!('caches' in window)) {
       setOfflineState('idle')
       return
@@ -156,7 +164,9 @@ export default function App() {
 
   const {
     state: compileState,
-    status: compileStatus,
+    statusKey,
+    statusParams,
+    statusOverride,
     diagnostics: compilerDiagnostics,
     log: compilerLog,
     unsupported,
@@ -184,6 +194,8 @@ export default function App() {
       }
     },
   })
+
+  const compileStatus = statusOverride ?? t(statusKey, statusParams)
 
   const loadProject = useCallback(async (next: Project) => {
     const list = await db.files.where('projectId').equals(next.id).toArray()
@@ -215,7 +227,7 @@ export default function App() {
   useEffect(() => {
     let cancelled = false
     void (async () => {
-      const seed = await ensureSeedProject()
+      const seed = await ensureSeedProject(t('project.welcome'))
       const all = await db.projects.orderBy('updatedAt').reverse().toArray()
       if (cancelled) return
       setProjects(all)
@@ -292,12 +304,12 @@ export default function App() {
 
   const createFile = async () => {
     if (!projectId) return
-    const name = window.prompt('New file path', 'chapter.tex')
+    const name = window.prompt(t('project.newFilePrompt'), t('project.defaultFileName'))
     if (!name) return
     const path = normalizePath(name)
     if (!path) return
     if (filesRef.current[path]) {
-      notify('That file already exists.', 'error')
+      notify(t('toast.fileExists'), 'error')
       return
     }
     const kind = isTextPath(path) || !extname(path) ? 'text' : 'binary'
@@ -317,12 +329,12 @@ export default function App() {
 
   const renameFile = async (oldPath: string) => {
     if (!project) return
-    const next = window.prompt('Rename file', oldPath)
+    const next = window.prompt(t('project.renamePrompt'), oldPath)
     if (!next) return
     const newPath = normalizePath(next)
     if (!newPath || newPath === oldPath) return
     if (filesRef.current[newPath]) {
-      notify('A file with that name already exists.', 'error')
+      notify(t('toast.nameExists'), 'error')
       return
     }
 
@@ -354,7 +366,7 @@ export default function App() {
 
   const deleteFile = async (path: string) => {
     if (!project) return
-    if (!window.confirm(`Delete ${path}?`)) return
+    if (!window.confirm(t('project.deleteConfirm', { path }))) return
 
     await db.files.delete([project.id, path])
     const remaining = { ...filesRef.current }
@@ -381,13 +393,13 @@ export default function App() {
     const updated = { ...project, mainFile: path, updatedAt: Date.now() }
     await saveProject(updated)
     setProjects((previous) => previous.map((item) => (item.id === updated.id ? updated : item)))
-    notify(`${basename(path)} is now the main file.`)
+    notify(t('toast.mainSet', { name: basename(path) }))
   }
 
   const runCompile = useCallback(() => {
     if (!project) return
     if (!project.mainFile || !filesRef.current[project.mainFile]) {
-      notify('Choose a main .tex file first.', 'error')
+      notify(t('toast.chooseMain'), 'error')
       return
     }
 
@@ -416,7 +428,7 @@ export default function App() {
     resetOnNextCompile.current = false
     setShowProblems(true)
     if (usedBibtex) {
-      notify('Compiled with BibTeX. Your file still says backend=biber; the browser build uses a BibTeX copy.')
+      notify(t('toast.bibtex'))
     }
   }, [compile, notify, project])
 
@@ -430,7 +442,7 @@ export default function App() {
       if (event.key.toLowerCase() === 's') {
         event.preventDefault()
         void Promise.all(Object.values(filesRef.current).map((file) => db.files.put(file)))
-        notify('Saved.')
+        notify(t('toast.saved'))
       }
     }
     window.addEventListener('keydown', onKeyDown)
@@ -440,7 +452,7 @@ export default function App() {
   const importZip = async (file: File) => {
     setImporting(true)
     try {
-      const entries = await unzipInWorker(await file.arrayBuffer())
+      const entries = await unzipInWorker(await file.arrayBuffer(), t('toast.unzipFailed'))
       const normalized = entries
         .map((entry) => ({ ...entry, path: normalizePath(entry.path) }))
         .filter((entry) => entry.path)
@@ -468,7 +480,7 @@ export default function App() {
           : { path: entry.path, kind: 'binary', data: entry.data, size: entry.data.byteLength }
       })
 
-      const name = file.name.replace(/\.zip$/i, '') || (root ? root : 'Imported project')
+      const name = file.name.replace(/\.zip$/i, '') || (root ? root : t('project.imported'))
       const created = await createProject(name, records)
       const detectedMain = detectMainFile(records.map((record) => record.path), textContents)
       if (detectedMain && detectedMain !== created.mainFile) {
@@ -479,9 +491,9 @@ export default function App() {
       const all = await db.projects.orderBy('updatedAt').reverse().toArray()
       setProjects(all)
       await loadProject(created)
-      notify(`Imported ${records.length} files${root ? ` from ${root}/` : ''}.`)
+      notify(t(root ? 'toast.importedRoot' : 'toast.imported', { count: records.length, root }))
     } catch (error) {
-      notify(error instanceof Error ? error.message : 'Import failed.', 'error')
+      notify(error instanceof Error ? `${t('toast.importFailed')} ${error.message}` : t('toast.importFailed'), 'error')
     } finally {
       setImporting(false)
     }
@@ -515,7 +527,7 @@ export default function App() {
         const snippet = added.map((path) => `\\includegraphics[width=\\linewidth]{${path}}`).join('\n')
         insertAtCursor(`\n${snippet}\n`)
       }
-      notify(`Added ${added.length} image${added.length === 1 ? '' : 's'}.`)
+      notify(t('toast.imagesAdded', { count: added.length }))
     }
   }
 
@@ -559,7 +571,7 @@ export default function App() {
 
   const prepareOffline = async () => {
     if (!('caches' in window)) {
-      notify('This browser does not expose the Cache API.', 'error')
+      notify(t('toast.noCacheApi'), 'error')
       return
     }
 
@@ -585,16 +597,16 @@ export default function App() {
         setOfflineProgress({ done, total: urls.length })
       }
       setOfflineState('ready')
-      notify('Engine and packages cached for offline use.')
+      notify(t('toast.offlineCached'))
     } catch (error) {
       setOfflineState('idle')
-      notify(error instanceof Error ? error.message : 'Could not cache the engine.', 'error')
+      notify(error instanceof Error ? `${t('toast.cacheFailed')} ${error.message}` : t('toast.cacheFailed'), 'error')
     }
   }
 
   const createBlankProject = async () => {
     const text = '\\documentclass{article}\n\n\\begin{document}\n\n\\end{document}\n'
-    const created = await createProject('Untitled project', [
+    const created = await createProject(t('project.untitled'), [
       { path: 'main.tex', kind: 'text', text, size: text.length },
     ])
     const all = await db.projects.orderBy('updatedAt').reverse().toArray()
@@ -660,8 +672,19 @@ export default function App() {
       <header className="toolbar">
         <div className="brand">
           <span className="brand-mark">λ</span>
-          <span className="brand-name">LaTeX IDE</span>
+          <span className="brand-name">{t('app.title')}</span>
         </div>
+
+        <select
+          className="language-select"
+          value={currentLanguage}
+          onChange={(event) => void i18n.changeLanguage(event.target.value)}
+          aria-label={t('language.label')}
+          title={t('language.label')}
+        >
+          <option value="en">{t('language.en')}</option>
+          <option value="de">{t('language.de')}</option>
+        </select>
 
         <select
           className="project-select"
@@ -670,47 +693,47 @@ export default function App() {
             const next = projects.find((item) => item.id === event.target.value)
             if (next) void loadProject(next)
           }}
-          aria-label="Project"
+          aria-label={t('toolbar.project')}
         >
           {projects.map((item) => (
             <option key={item.id} value={item.id}>{item.name}</option>
           ))}
         </select>
-        <button className="icon-button" onClick={() => void createBlankProject()} title="New project">+</button>
+        <button className="icon-button" onClick={() => void createBlankProject()} title={t('toolbar.newProject')}>+</button>
 
         <div className="toolbar-actions">
           <button className="small-button" onClick={() => zipInputRef.current?.click()} disabled={importing}>
-            {importing ? 'Importing…' : 'Import ZIP'}
+            {importing ? t('toolbar.importing') : t('toolbar.importZip')}
           </button>
-          <button className="small-button" onClick={() => void createFile()} disabled={!projectId}>+ File</button>
-          <button className="small-button" onClick={() => imageInputRef.current?.click()} disabled={!projectId}>+ Image</button>
+          <button className="small-button" onClick={() => void createFile()} disabled={!projectId}>{t('toolbar.newFile')}</button>
+          <button className="small-button" onClick={() => imageInputRef.current?.click()} disabled={!projectId}>{t('toolbar.uploadImage')}</button>
           <button className="small-button" onClick={() => setShowProblems((value) => !value)}>
-            Problems{errorCount > 0 ? ` (${errorCount})` : ''}
+            {t('toolbar.problems')}{errorCount > 0 ? ` (${errorCount})` : ''}
           </button>
-          <button className="small-button" onClick={() => void prepareOffline()} disabled={offlineState === 'working'} title="Cache the TeX engine for offline use">
+          <button className="small-button" onClick={() => void prepareOffline()} disabled={offlineState === 'working'} title={t('toolbar.cacheTitle')}>
             {offlineState === 'working'
-              ? `Caching ${offlineProgress.done}/${offlineProgress.total}`
+              ? t('toolbar.caching', { done: offlineProgress.done, total: offlineProgress.total })
               : offlineState === 'ready'
-                ? 'Offline ✓'
-                : 'Offline'}
+                ? t('toolbar.offlineReady')
+                : t('toolbar.offline')}
           </button>
           <button className="primary-button" onClick={runCompile} disabled={isCompiling || !project?.mainFile}>
-            {isCompiling ? 'Compiling…' : 'Compile'}
+            {isCompiling ? t('toolbar.compiling') : t('toolbar.compile')}
           </button>
-          <button className="small-button" onClick={downloadZip} disabled={!project}>ZIP</button>
-          <button className="small-button" onClick={downloadPdf} disabled={!pdf}>PDF</button>
+          <button className="small-button" onClick={downloadZip} disabled={!project}>{t('toolbar.zip')}</button>
+          <button className="small-button" onClick={downloadPdf} disabled={!pdf}>{t('toolbar.pdf')}</button>
         </div>
 
         <div className={`engine-status${compileState === 'error' ? ' is-error' : ''}${!online ? ' is-offline' : ''}`} title={compileStatus}>
           <span className="status-dot" />
-          <span className="status-text">{!online ? `Offline · ${compileStatus}` : compileStatus}</span>
+          <span className="status-text">{!online ? `${t('status.offline')} · ${compileStatus}` : compileStatus}</span>
         </div>
       </header>
 
       <div className="mobile-tabs">
-        <button className={mobileTab === 'files' ? 'is-active' : ''} onClick={() => setMobileTab('files')}>Files</button>
-        <button className={mobileTab === 'editor' ? 'is-active' : ''} onClick={() => setMobileTab('editor')}>Editor</button>
-        <button className={mobileTab === 'pdf' ? 'is-active' : ''} onClick={() => setMobileTab('pdf')}>PDF</button>
+        <button className={mobileTab === 'files' ? 'is-active' : ''} onClick={() => setMobileTab('files')}>{t('files.title')}</button>
+        <button className={mobileTab === 'editor' ? 'is-active' : ''} onClick={() => setMobileTab('editor')}>{t('editor.title')}</button>
+        <button className={mobileTab === 'pdf' ? 'is-active' : ''} onClick={() => setMobileTab('pdf')}>{t('pdf.title')}</button>
       </div>
 
       <main className={`main-grid mobile-${mobileTab}${showProblems ? ' with-problems' : ''}`}>
@@ -728,14 +751,14 @@ export default function App() {
 
         <section className="editor-pane">
           <div className="tabs">
-            {openPaths.length === 0 && <span className="tabs-empty">No file open</span>}
+            {openPaths.length === 0 && <span className="tabs-empty">{t('editor.noFileOpen')}</span>}
             {openPaths.map((path) => (
               <div key={path} className={`tab${activePath === path ? ' is-active' : ''}`}>
                 <button className="tab-name" onClick={() => openFile(path)} title={path}>
                   {basename(path)}
                   {project?.mainFile === path ? ' ★' : ''}
                 </button>
-                <button className="tab-close" onClick={() => closeTab(path)} title="Close">✕</button>
+                <button className="tab-close" onClick={() => closeTab(path)} title={t('editor.closeTab')}>✕</button>
               </div>
             ))}
           </div>
@@ -743,11 +766,11 @@ export default function App() {
             {!activeFile && (
               <div className="empty-editor">
                 <div className="empty-mark">T<sub>E</sub>X</div>
-                <h2>No file open</h2>
-                <p>Choose a file from the sidebar, create a new one, or import a ZIP project.</p>
+                <h2>{t('editor.noFileOpen')}</h2>
+                <p>{t('editor.emptyHint')}</p>
                 <div className="empty-actions">
-                  <button className="small-button" onClick={() => void createFile()}>Create a file</button>
-                  <button className="small-button" onClick={() => zipInputRef.current?.click()}>Import a ZIP</button>
+                  <button className="small-button" onClick={() => void createFile()}>{t('editor.createFile')}</button>
+                  <button className="small-button" onClick={() => zipInputRef.current?.click()}>{t('editor.importZip')}</button>
                 </div>
               </div>
             )}
@@ -784,10 +807,10 @@ export default function App() {
       <PwaUpdate />
       {project && (
         <div className="sr-only" aria-live="polite">
-          {project.name} · {Object.keys(files).length} files · {compileStatus}
+          {t('app.summary', { name: project.name, count: Object.keys(files).length, status: compileStatus })}
         </div>
       )}
-      {!projectId && <div className="loading-overlay">Loading project…</div>}
+      {!projectId && <div className="loading-overlay">{t('app.loadingProject')}</div>}
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { ProjectFile } from '../types'
 import { basename, formatBytes, isImagePath, isTexPath } from '../lib/paths'
 
@@ -70,6 +71,7 @@ export function FileTree({
   onNewFile,
   onImportZip,
 }: Props) {
+  const { t } = useTranslation()
   const tree = useMemo(() => buildTree(files), [files])
 
   const renderNode = (node: TreeNode, depth: number) => {
@@ -104,13 +106,13 @@ export function FileTree({
       >
         <span className={`tree-icon file-icon ext-${node.path.split('.').pop()?.toLowerCase() ?? 'none'}`}>{iconFor(node.path)}</span>
         <span className="tree-name" title={`${node.path} · ${formatBytes(file.size)}`}>{basename(node.path)}</span>
-        {isMain && <span className="main-badge" title="Main file">★</span>}
+        {isMain && <span className="main-badge" title={t('files.mainTitle')}>★</span>}
         <span className="tree-actions" onClick={(event) => event.stopPropagation()}>
           {isTexPath(node.path) && !isMain && (
-            <button className="icon-button" title="Set as main file" onClick={() => onSetMain(node.path)}>☆</button>
+            <button className="icon-button" title={t('files.setMain')} onClick={() => onSetMain(node.path)}>☆</button>
           )}
-          <button className="icon-button" title="Rename" onClick={() => onRename(node.path)}>✎</button>
-          <button className="icon-button" title="Delete" onClick={() => onDelete(node.path)}>✕</button>
+          <button className="icon-button" title={t('files.rename')} onClick={() => onRename(node.path)}>✎</button>
+          <button className="icon-button" title={t('files.delete')} onClick={() => onDelete(node.path)}>✕</button>
         </span>
       </div>
     )
@@ -119,16 +121,16 @@ export function FileTree({
   return (
     <aside className="sidebar">
       <div className="panel-heading">
-        <span>Files</span>
+        <span>{t('files.title')}</span>
         <span className="panel-count">{Object.keys(files).length}</span>
       </div>
       <div className="sidebar-actions">
-        <button className="small-button" onClick={onNewFile}>+ File</button>
-        <button className="small-button" onClick={onImportZip}>Import ZIP</button>
+        <button className="small-button" onClick={onNewFile}>{t('files.newFile')}</button>
+        <button className="small-button" onClick={onImportZip}>{t('files.importZip')}</button>
       </div>
       <div className="tree" role="tree">
         {tree.length === 0 ? (
-          <div className="empty-note">No files yet. Create one or import a ZIP.</div>
+          <div className="empty-note">{t('files.empty')}</div>
         ) : (
           tree.map((node) => renderNode(node, 0))
         )}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf'
 import pdfWorkerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.js?url'
 
@@ -16,6 +17,7 @@ type PdfDoc = {
 }
 
 export function PdfPreview({ data, onDownload }: Props) {
+  const { t } = useTranslation()
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [doc, setDoc] = useState<PdfDoc | null>(null)
@@ -123,11 +125,11 @@ export function PdfPreview({ data, onDownload }: Props) {
     <section className="preview-pane">
       <div className="preview-toolbar">
         <div className="preview-title">
-          PDF
-          {doc && <span className="muted"> · {doc.numPages} {doc.numPages === 1 ? 'page' : 'pages'}</span>}
+          {t('pdf.title')}
+          {doc && <span className="muted"> · {t('pdf.pages', { count: doc.numPages })}</span>}
         </div>
         <div className="preview-controls">
-          <button className="icon-button" onClick={() => go(-1)} disabled={!doc || page <= 1} title="Previous page">‹</button>
+          <button className="icon-button" onClick={() => go(-1)} disabled={!doc || page <= 1} title={t('pdf.previousPage')}>‹</button>
           <input
             className="page-input"
             type="number"
@@ -139,26 +141,26 @@ export function PdfPreview({ data, onDownload }: Props) {
               if (doc && next >= 1 && next <= doc.numPages) setPage(next)
             }}
             disabled={!doc}
-            aria-label="Page number"
+            aria-label={t('pdf.pageNumber')}
           />
-          <button className="icon-button" onClick={() => go(1)} disabled={!doc || page >= (doc?.numPages ?? 1)} title="Next page">›</button>
+          <button className="icon-button" onClick={() => go(1)} disabled={!doc || page >= (doc?.numPages ?? 1)} title={t('pdf.nextPage')}>›</button>
           <span className="divider" />
           <button
             className={`icon-button${fitWidth ? ' is-active' : ''}`}
             onClick={() => setFitWidth((value) => !value)}
-            title="Fit width"
+            title={t('pdf.fitWidth')}
           >
             ↔
           </button>
-          <button className="icon-button" onClick={() => { setFitWidth(false); setZoom((value) => Math.max(0.4, value - 0.15)) }} title="Zoom out">−</button>
-          <span className="zoom-label">{fitWidth ? 'Fit' : `${Math.round(zoom * 100)}%`}</span>
-          <button className="icon-button" onClick={() => { setFitWidth(false); setZoom((value) => Math.min(3, value + 0.15)) }} title="Zoom in">+</button>
+          <button className="icon-button" onClick={() => { setFitWidth(false); setZoom((value) => Math.max(0.4, value - 0.15)) }} title={t('pdf.zoomOut')}>−</button>
+          <span className="zoom-label">{fitWidth ? t('pdf.fit') : `${Math.round(zoom * 100)}%`}</span>
+          <button className="icon-button" onClick={() => { setFitWidth(false); setZoom((value) => Math.min(3, value + 0.15)) }} title={t('pdf.zoomIn')}>+</button>
           <span className="divider" />
-          <button className="small-button" onClick={onDownload} disabled={!data}>Download</button>
+          <button className="small-button" onClick={onDownload} disabled={!data}>{t('pdf.download')}</button>
         </div>
       </div>
       <div className="preview-scroll" ref={containerRef}>
-        {!data && <div className="preview-empty"><div className="empty-mark">PDF</div><p>Compile your project to see the PDF here.</p></div>}
+        {!data && <div className="preview-empty"><div className="empty-mark">PDF</div><p>{t('pdf.empty')}</p></div>}
         {error && <div className="preview-error">{error}</div>}
         {data && !error && <canvas ref={canvasRef} className="pdf-canvas" />}
       </div>

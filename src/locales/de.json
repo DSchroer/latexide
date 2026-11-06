@@ -1,0 +1,125 @@
+{
+  "app": {
+    "title": "LaTeX-IDE",
+    "loadingProject": "Projekt wird geladen…",
+    "summary": "{{name}} · {{count}} Dateien · {{status}}"
+  },
+  "language": {
+    "label": "Sprache",
+    "en": "English",
+    "de": "Deutsch"
+  },
+  "toolbar": {
+    "project": "Projekt",
+    "newProject": "Neues Projekt",
+    "importZip": "ZIP importieren",
+    "importing": "Importiere…",
+    "newFile": "+ Datei",
+    "uploadImage": "+ Bild",
+    "problems": "Probleme",
+    "compile": "Kompilieren",
+    "compiling": "Kompiliere…",
+    "zip": "ZIP",
+    "pdf": "PDF",
+    "offline": "Offline",
+    "offlineReady": "Offline ✓",
+    "caching": "Speichere {{done}}/{{total}}",
+    "cacheTitle": "TeX-Engine für die Offline-Nutzung zwischenspeichern"
+  },
+  "project": {
+    "welcome": "Willkommen",
+    "untitled": "Unbenanntes Projekt",
+    "imported": "Importiertes Projekt",
+    "newFilePrompt": "Neuer Dateipfad",
+    "renamePrompt": "Datei umbenennen",
+    "deleteConfirm": "{{path}} löschen?",
+    "defaultFileName": "chapter.tex"
+  },
+  "files": {
+    "title": "Dateien",
+    "newFile": "+ Datei",
+    "importZip": "ZIP importieren",
+    "empty": "Noch keine Dateien. Erstelle eine Datei oder importiere eine ZIP-Datei.",
+    "mainTitle": "Hauptdatei",
+    "setMain": "Als Hauptdatei festlegen",
+    "rename": "Umbenennen",
+    "delete": "Löschen"
+  },
+  "editor": {
+    "loading": "Editor wird geladen…",
+    "noFileOpen": "Keine Datei geöffnet",
+    "emptyHint": "Wähle eine Datei aus der Seitenleiste, erstelle eine neue oder importiere ein ZIP-Projekt.",
+    "createFile": "Datei erstellen",
+    "importZip": "ZIP importieren",
+    "closeTab": "Schließen",
+    "title": "Editor"
+  },
+  "pdf": {
+    "title": "PDF",
+    "pages_one": "{{count}} Seite",
+    "pages_other": "{{count}} Seiten",
+    "previousPage": "Vorherige Seite",
+    "nextPage": "Nächste Seite",
+    "pageNumber": "Seitenzahl",
+    "fitWidth": "Breite anpassen",
+    "fit": "Anpassen",
+    "zoomOut": "Verkleinern",
+    "zoomIn": "Vergrößern",
+    "download": "Herunterladen",
+    "empty": "Kompiliere dein Projekt, um hier die PDF-Vorschau zu sehen."
+  },
+  "problems": {
+    "title": "Probleme",
+    "log": "Protokoll",
+    "noProblems": "Keine Probleme gemeldet. Kompiliere, um das Dokument zu prüfen.",
+    "noLog": "Noch kein Protokoll.",
+    "hide": "Bereich ausblenden",
+    "document": "Dokument",
+    "errors_one": "{{count}} Fehler",
+    "errors_other": "{{count}} Fehler",
+    "warnings_one": "{{count}} Warnung",
+    "warnings_other": "{{count}} Warnungen",
+    "unsupported": "Im Browser-TeX-Bundle nicht verfügbar:"
+  },
+  "status": {
+    "starting": "Engine wird gestartet…",
+    "loadingEngine": "TeX-Engine wird geladen…",
+    "loadingBundle": "TeX-Bundle wird geladen…",
+    "loadingPackIndex": "Paketindex wird geladen…",
+    "loadingPackages": "Pakete werden geladen {{current}}/{{total}}…",
+    "loadingPack": "{{label}} wird geladen…",
+    "loadingThesisPack": "These-Paket wird geladen…",
+    "compiling": "Kompiliere…",
+    "recompiling": "Mit zusätzlichen Paketen neu kompilieren…",
+    "ready": "Bereit",
+    "failed": "Kompilierung fehlgeschlagen",
+    "restarting": "Engine wird neu gestartet…",
+    "offline": "Offline",
+    "workerCrashed": "Der Kompilier-Worker ist abgestürzt.",
+    "engineCrashed": "Die TeX-Engine ist abgestürzt und wurde zurückgesetzt. Drücke erneut auf Kompilieren.",
+    "engineNotReady": "Die TeX-Engine ist noch nicht bereit."
+  },
+  "toast": {
+    "fileExists": "Diese Datei existiert bereits.",
+    "nameExists": "Eine Datei mit diesem Namen existiert bereits.",
+    "chooseMain": "Wähle zuerst eine Haupt-.tex-Datei.",
+    "bibtex": "Mit BibTeX kompiliert. Deine Datei enthält weiterhin backend=biber; der Browser-Build verwendet eine BibTeX-Kopie.",
+    "saved": "Gespeichert.",
+    "imported_one": "{{count}} Datei importiert.",
+    "imported_other": "{{count}} Dateien importiert.",
+    "importFailed": "Import fehlgeschlagen.",
+    "imagesAdded_one": "{{count}} Bild hinzugefügt.",
+    "imagesAdded_other": "{{count}} Bilder hinzugefügt.",
+    "offlineCached": "Engine und Pakete für die Offline-Nutzung zwischengespeichert.",
+    "noCacheApi": "Dieser Browser stellt die Cache-API nicht bereit.",
+    "cacheFailed": "Die Engine konnte nicht zwischengespeichert werden.",
+    "unzipFailed": "Die ZIP-Datei konnte nicht entpackt werden.",
+    "mainSet": "{{name}} ist jetzt die Hauptdatei.",
+    "importedRoot_one": "{{count}} Datei aus {{root}} importiert.",
+    "importedRoot_other": "{{count}} Dateien aus {{root}} importiert."
+  },
+  "pwa": {
+    "updateAvailable": "Eine neue Version ist verfügbar.",
+    "reload": "Neu laden"
+  }
+}

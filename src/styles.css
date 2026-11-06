@@ -116,6 +116,16 @@ pre {
   font-size: 12.5px;
 }
 
+.language-select {
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .toolbar-actions {
   display: flex;
   align-items: center;
@@ -920,6 +930,10 @@ pre {
 
   .project-select {
     max-width: 120px;
+  }
+
+  .language-select {
+    max-width: 82px;
   }
 
   .engine-status {

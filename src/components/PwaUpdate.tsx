@@ -1,6 +1,8 @@
+import { useTranslation } from 'react-i18next'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
 export function PwaUpdate() {
+  const { t } = useTranslation()
   const {
     needRefresh: [needRefresh],
     updateServiceWorker,
@@ -10,8 +12,8 @@ export function PwaUpdate() {
 
   return (
     <div className="pwa-update">
-      <span>A new version is available.</span>
-      <button className="small-button" onClick={() => void updateServiceWorker(true)}>Reload</button>
+      <span>{t('pwa.updateAvailable')}</span>
+      <button className="small-button" onClick={() => void updateServiceWorker(true)}>{t('pwa.reload')}</button>
     </div>
   )
 }

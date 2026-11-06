@@ -1,4 +1,5 @@
 import Editor, { type OnMount } from '@monaco-editor/react'
+import { useTranslation } from 'react-i18next'
 import { languageForPath } from '../lib/paths'
 
 type Props = {
@@ -10,6 +11,8 @@ type Props = {
 }
 
 export function EditorPane({ path, modelPath, value, onChange, onMount }: Props) {
+  const { t } = useTranslation()
+
   return (
     <div className="editor-wrap">
       <Editor
@@ -19,7 +22,7 @@ export function EditorPane({ path, modelPath, value, onChange, onMount }: Props)
         onChange={(next) => onChange(next ?? '')}
         onMount={onMount}
         theme="vs-dark"
-        loading={<div className="editor-loading">Loading editor…</div>}
+        loading={<div className="editor-loading">{t('editor.loading')}</div>}
         options={{
           fontSize: 14,
           fontFamily: "'JetBrains Mono', 'SFMono-Regular', Consolas, monospace",

@@ -1,0 +1,125 @@
+{
+  "app": {
+    "title": "LaTeX IDE",
+    "loadingProject": "Loading project…",
+    "summary": "{{name}} · {{count}} files · {{status}}"
+  },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "de": "Deutsch"
+  },
+  "toolbar": {
+    "project": "Project",
+    "newProject": "New project",
+    "importZip": "Import ZIP",
+    "importing": "Importing…",
+    "newFile": "+ File",
+    "uploadImage": "+ Image",
+    "problems": "Problems",
+    "compile": "Compile",
+    "compiling": "Compiling…",
+    "zip": "ZIP",
+    "pdf": "PDF",
+    "offline": "Offline",
+    "offlineReady": "Offline ✓",
+    "caching": "Caching {{done}}/{{total}}",
+    "cacheTitle": "Cache the TeX engine for offline use"
+  },
+  "project": {
+    "welcome": "Welcome",
+    "untitled": "Untitled project",
+    "imported": "Imported project",
+    "newFilePrompt": "New file path",
+    "renamePrompt": "Rename file",
+    "deleteConfirm": "Delete {{path}}?",
+    "defaultFileName": "chapter.tex"
+  },
+  "files": {
+    "title": "Files",
+    "newFile": "+ File",
+    "importZip": "Import ZIP",
+    "empty": "No files yet. Create one or import a ZIP.",
+    "mainTitle": "Main file",
+    "setMain": "Set as main file",
+    "rename": "Rename",
+    "delete": "Delete"
+  },
+  "editor": {
+    "loading": "Loading editor…",
+    "noFileOpen": "No file open",
+    "emptyHint": "Choose a file from the sidebar, create a new one, or import a ZIP project.",
+    "createFile": "Create a file",
+    "importZip": "Import a ZIP",
+    "closeTab": "Close",
+    "title": "Editor"
+  },
+  "pdf": {
+    "title": "PDF",
+    "pages_one": "{{count}} page",
+    "pages_other": "{{count}} pages",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "pageNumber": "Page number",
+    "fitWidth": "Fit width",
+    "fit": "Fit",
+    "zoomOut": "Zoom out",
+    "zoomIn": "Zoom in",
+    "download": "Download",
+    "empty": "Compile your project to see the PDF here."
+  },
+  "problems": {
+    "title": "Problems",
+    "log": "Log",
+    "noProblems": "No problems reported. Compile to check the document.",
+    "noLog": "No log yet.",
+    "hide": "Hide panel",
+    "document": "document",
+    "errors_one": "{{count}} error",
+    "errors_other": "{{count}} errors",
+    "warnings_one": "{{count}} warning",
+    "warnings_other": "{{count}} warnings",
+    "unsupported": "Not available in the browser TeX bundle:"
+  },
+  "status": {
+    "starting": "Starting engine…",
+    "loadingEngine": "Loading TeX engine…",
+    "loadingBundle": "Loading TeX bundle…",
+    "loadingPackIndex": "Loading package index…",
+    "loadingPackages": "Loading packages {{current}}/{{total}}…",
+    "loadingPack": "Loading {{label}}…",
+    "loadingThesisPack": "Loading thesis package pack…",
+    "compiling": "Compiling…",
+    "recompiling": "Recompiling with additional packages…",
+    "ready": "Ready",
+    "failed": "Compilation failed",
+    "restarting": "Restarting engine…",
+    "offline": "Offline",
+    "workerCrashed": "The compile worker crashed.",
+    "engineCrashed": "The TeX engine crashed and was reset. Press Compile again.",
+    "engineNotReady": "The TeX engine is not ready."
+  },
+  "toast": {
+    "fileExists": "That file already exists.",
+    "nameExists": "A file with that name already exists.",
+    "chooseMain": "Choose a main .tex file first.",
+    "bibtex": "Compiled with BibTeX. Your file still says backend=biber; the browser build uses a BibTeX copy.",
+    "saved": "Saved.",
+    "imported_one": "Imported {{count}} file.",
+    "imported_other": "Imported {{count}} files.",
+    "importFailed": "Import failed.",
+    "imagesAdded_one": "Added {{count}} image.",
+    "imagesAdded_other": "Added {{count}} images.",
+    "offlineCached": "Engine and packages cached for offline use.",
+    "noCacheApi": "This browser does not expose the Cache API.",
+    "cacheFailed": "Could not cache the engine.",
+    "unzipFailed": "Could not unzip the file.",
+    "mainSet": "{{name}} is now the main file.",
+    "importedRoot_one": "Imported {{count}} file from {{root}}.",
+    "importedRoot_other": "Imported {{count}} files from {{root}}."
+  },
+  "pwa": {
+    "updateAvailable": "A new version is available.",
+    "reload": "Reload"
+  }
+}

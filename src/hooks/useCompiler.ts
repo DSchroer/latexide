@@ -14,7 +14,9 @@ export function useCompiler({ onResult }: UseCompilerOptions) {
   onResultRef.current = onResult
 
   const [state, setState] = useState<CompileState>('loading')
-  const [status, setStatus] = useState('Starting engine…')
+  const [statusKey, setStatusKey] = useState('status.starting')
+  const [statusParams, setStatusParams] = useState<Record<string, string | number>>({})
+  const [statusOverride, setStatusOverride] = useState<string | null>(null)
   const [diagnostics, setDiagnostics] = useState<Diagnostic[]>([])
   const [log, setLog] = useState('')
   const [unsupported, setUnsupported] = useState<string[]>([])
@@ -29,11 +31,15 @@ export function useCompiler({ onResult }: UseCompilerOptions) {
       const message = event.data
       if (message.type === 'ready') {
         setState('idle')
-        setStatus('Ready')
+        setStatusKey('status.ready')
+        setStatusParams({})
+        setStatusOverride(null)
         return
       }
       if (message.type === 'status') {
-        setStatus(message.message)
+        setStatusKey(message.key)
+        setStatusParams(message.params ?? {})
+        setStatusOverride(null)
         setState((previous) => (previous === 'error' ? previous : 'loading'))
         return
       }
@@ -51,19 +57,25 @@ export function useCompiler({ onResult }: UseCompilerOptions) {
         setLog(message.log)
         setUnsupported(message.unsupported)
         setState(message.pdf ? 'idle' : 'error')
-        setStatus(message.pdf ? 'Ready' : 'Compilation failed')
+        setStatusKey(message.pdf ? 'status.ready' : 'status.failed')
+        setStatusParams({})
+        setStatusOverride(null)
         return
       }
       if (message.type === 'error') {
         setState('error')
-        setStatus(message.message)
+        setStatusKey('status.failed')
+        setStatusParams({})
+        setStatusOverride(message.message)
         if (message.log) setLog(message.log)
       }
     }
 
-    worker.onerror = (event) => {
+    worker.onerror = () => {
       setState('error')
-      setStatus(event.message || 'The compile worker crashed.')
+      setStatusKey('status.workerCrashed')
+      setStatusParams({})
+      setStatusOverride(null)
     }
 
     worker.postMessage({ type: 'init', baseUrl })
@@ -77,17 +89,21 @@ export function useCompiler({ onResult }: UseCompilerOptions) {
   const compile = (files: CompileFile[], mainFile: string, reset = false) => {
     if (!workerRef.current || !mainFile) return
     setState('compiling')
-    setStatus('Compiling…')
+    setStatusKey('status.compiling')
+    setStatusParams({})
+    setStatusOverride(null)
     workerRef.current.postMessage({ type: 'compile', files, mainFile, reset })
   }
 
   const resetEngine = () => {
     workerRef.current?.postMessage({ type: 'reset' })
     setState('loading')
-    setStatus('Restarting engine…')
+    setStatusKey('status.restarting')
+    setStatusParams({})
+    setStatusOverride(null)
     const baseUrl = new URL(import.meta.env.BASE_URL, window.location.origin).href
     workerRef.current?.postMessage({ type: 'init', baseUrl })
   }
 
-  return { state, status, diagnostics, log, unsupported, compile, resetEngine }
+  return { state, statusKey, statusParams, statusOverride, diagnostics, log, unsupported, compile, resetEngine }
 }

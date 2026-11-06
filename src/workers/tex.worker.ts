@@ -47,21 +47,21 @@ async function loadPack(pack: PackDefinition, target: TexEngine): Promise<void> 
 }
 
 async function initialize(): Promise<void> {
-  post({ type: 'status', message: 'Loading TeX engine…' })
+  post({ type: 'status', key: 'status.loadingEngine' })
   const wasm = await fetchBytes('engine/tectonic_wasm.wasm')
   const loaded = await TexEngine.load(wasm)
 
-  post({ type: 'status', message: 'Loading TeX bundle…' })
+  post({ type: 'status', key: 'status.loadingBundle' })
   const bundleBytes = await fetchBytes('engine/tectonic-bundle.tar.gz')
   loaded.addFiles(unpack(bundleBytes))
 
-  post({ type: 'status', message: 'Loading package index…' })
+  post({ type: 'status', key: 'status.loadingPackIndex' })
   const indexJson = JSON.parse(new TextDecoder().decode(await fetchBytes('tex-packs/index.json')))
   packIndex = parsePackIndex(indexJson)
 
   const packs = defaultPacks(packIndex)
   for (let i = 0; i < packs.length; i += 1) {
-    post({ type: 'status', message: `Loading packages ${i + 1}/${packs.length}…` })
+    post({ type: 'status', key: 'status.loadingPackages', params: { current: i + 1, total: packs.length } })
     await loadPack(packs[i], loaded)
   }
 
@@ -71,7 +71,7 @@ async function initialize(): Promise<void> {
   try {
     const custom = await fetch(new URL('tex-packs/thesis.tar.gz', baseUrl))
     if (custom.ok) {
-      post({ type: 'status', message: 'Loading thesis package pack…' })
+      post({ type: 'status', key: 'status.loadingThesisPack' })
       loaded.addFiles(unpack(new Uint8Array(await custom.arrayBuffer())))
     }
   } catch {
@@ -123,7 +123,7 @@ async function compile(files: CompileFile[], mainFile: string, reset = false): P
     }
   }
 
-  post({ type: 'status', message: 'Compiling…' })
+  post({ type: 'status', key: 'status.compiling' })
   let result = engine.compile({
     entry: mainFile,
     maxPasses: 4,
@@ -137,10 +137,10 @@ async function compile(files: CompileFile[], mainFile: string, reset = false): P
     unsupported = resolution.unsupported
     if (resolution.packs.length > 0) {
       for (const pack of resolution.packs) {
-        post({ type: 'status', message: `Loading ${pack.label}…` })
+        post({ type: 'status', key: 'status.loadingPack', params: { label: pack.label } })
         await loadPack(pack, engine)
       }
-      post({ type: 'status', message: 'Recompiling with additional packages…' })
+      post({ type: 'status', key: 'status.recompiling' })
       result = engine.compile({
         entry: mainFile,
         maxPasses: 4,

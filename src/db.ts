@@ -76,11 +76,11 @@ export async function createProject(name: string, files: Array<Omit<ProjectFile,
   return project
 }
 
-export async function ensureSeedProject(): Promise<Project> {
+export async function ensureSeedProject(name = 'Welcome'): Promise<Project> {
   const existing = await db.projects.orderBy('updatedAt').last()
   if (existing) return existing
 
-  return createProject('Welcome', [
+  return createProject(name, [
     {
       path: 'main.tex',
       kind: 'text',
