@@ -194,7 +194,15 @@
     "google": "Continue with Google",
     "signingIn": "Signing in…",
     "note": "Projects are stored in Firebase and cached locally for fast, offline editing.",
-    "loading": "Connecting to Firebase…"
+    "loading": "Connecting to Firebase…",
+    "or": "or",
+    "emailPlaceholder": "you@example.com",
+    "magicLink": "Email me a sign-in link",
+    "sending": "Sending…",
+    "magicLinkSent": "Check your inbox. The link signs you in without a password.",
+    "linkEmailPrompt": "Enter the email address this sign-in link was sent to.",
+    "complete": "Complete sign-in",
+    "completing": "Signing in…"
   },
   "account": {
     "account": "Account",

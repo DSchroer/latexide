@@ -2,7 +2,7 @@
   "auth": {
     "providers": {
       "googleSignIn": {
-        "oAuthBrandDisplayName": "LaTeX IDE",
+        "oAuthBrandDisplayName": "Domverleaf",
         "supportEmail": "dominick.schroer@gmail.com",
         "authorizedRedirectUris": [
           "https://latexide-dschroer.firebaseapp.com",
@@ -10,7 +10,8 @@
           "https://dschroer.github.io",
           "http://localhost"
         ]
-      }
+      },
+      "emailPassword": true
     }
   },
   "firestore": {

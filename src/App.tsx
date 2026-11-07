@@ -1336,7 +1336,7 @@ function Workspace({ user, onSignOut }: { user: User; onSignOut: () => Promise<v
 
 export default function App() {
   const { t } = useTranslation()
-  const { user, loading, error, signIn, signOut } = useAuth()
+  const { user, loading, error, signIn, signOut, sendMagicLink, completeMagicLink, magicLinkSent, needsLinkEmail, initialEmail } = useAuth()
 
   if (loading) {
     return (
@@ -1350,7 +1350,17 @@ export default function App() {
   }
 
   if (!user) {
-    return <AuthScreen onSignIn={signIn} error={error} />
+    return (
+      <AuthScreen
+        onSignIn={signIn}
+        onSendMagicLink={sendMagicLink}
+        onCompleteMagicLink={completeMagicLink}
+        error={error}
+        magicLinkSent={magicLinkSent}
+        needsLinkEmail={needsLinkEmail}
+        initialEmail={initialEmail}
+      />
+    )
   }
 
   return <Workspace user={user} onSignOut={signOut} />

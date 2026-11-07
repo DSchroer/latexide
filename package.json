@@ -18,7 +18,7 @@
     "thesis-pack": "bash scripts/build-thesis-pack.sh",
     "test:thesis": "node scripts/test-thesis.mjs",
     "fb": "firebase",
-    "deploy:firebase": "firebase deploy --only auth,firestore:rules,firestore:indexes,storage",
+    "deploy:firebase": "firebase deploy --only auth,firestore:rules,firestore:indexes,storage && node scripts/enable-email-link.mjs",
     "emulators": "firebase emulators:start --only auth,firestore,storage"
   },
   "keywords": [

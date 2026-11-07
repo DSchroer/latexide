@@ -194,7 +194,15 @@
     "google": "Mit Google fortfahren",
     "signingIn": "Anmeldung läuft…",
     "note": "Projekte werden in Firebase gespeichert und lokal für schnelles, Offline-Bearbeiten zwischengespeichert.",
-    "loading": "Verbindung zu Firebase…"
+    "loading": "Verbindung zu Firebase…",
+    "or": "oder",
+    "emailPlaceholder": "du@example.com",
+    "magicLink": "Anmelde-Link per E-Mail senden",
+    "sending": "Sende…",
+    "magicLinkSent": "Prüfe dein Postfach. Der Link meldet dich ohne Passwort an.",
+    "linkEmailPrompt": "Gib die E-Mail-Adresse ein, an die dieser Anmeldelink gesendet wurde.",
+    "complete": "Anmeldung abschließen",
+    "completing": "Anmeldung läuft…"
   },
   "account": {
     "account": "Konto",

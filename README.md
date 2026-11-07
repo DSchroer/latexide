@@ -13,7 +13,8 @@ A local-first LaTeX editor that compiles in your browser. No account, no server,
 - Compile with a WebAssembly Tectonic engine (XeTeX + BibTeX)
 - PDF preview rendered with PDF.js
 - Local version history with automatic snapshots, named checkpoints, and restore
-- Google sign-in accounts with cloud-backed projects and editor sharing
+- Google sign-in and passwordless email-link (magic link) accounts
+- Cloud-backed projects with editor sharing
 - Download the project as a ZIP (with or without `.history/`) or the compiled PDF
 - Autosave to IndexedDB, with the last PDF restored on reload
 - Installable PWA with an explicit “Offline” cache for the engine and packages
@@ -56,13 +57,27 @@ not available, `style=numeric` is part of the standard references pack.
 The app uses Firebase:
 
 - **Project:** `latexide-dschroer`
-- **Auth:** Google sign-in only
+- **Auth:** Google sign-in and email-link magic link
 - **Firestore:** project metadata, membership, and version manifests
 - **Storage:** `us-central1` bucket `latexide-dschroer.firebasestorage.app`
 - **Sharing:** owner invites editors by email; editors can open, edit, and sync
 
 The cloud copy is authoritative. IndexedDB is a local cache and outbox, so edits
 are saved immediately and synced after a checkpoint or auto-snapshot.
+
+### Magic-link sign-in
+
+The email provider is enabled with `passwordRequired: false`, which is required
+for Firebase email-link sign-in. The app sends the link with
+`sendSignInLinkToEmail`, stores the email locally for same-device completion,
+and calls `signInWithEmailLink` when the link returns.
+
+If the link is opened on another device, the app asks for the email address it
+was sent to. Firefox/Safari users should open the link in the same browser
+profile when possible.
+
+The default Firebase email template is used. Custom SMTP is optional; without
+it, Firebase's default sender handles delivery.
 
 ### Firebase CLI
 
@@ -81,6 +96,10 @@ Deploy rules, indexes, and auth configuration:
 ```bash
 npm run deploy:firebase
 ```
+
+The deploy command also re-applies `passwordRequired: false` because the
+Firebase CLI's email/password provider defaults to requiring a password, which
+would disable email-link sign-in.
 
 Local emulators:
 
