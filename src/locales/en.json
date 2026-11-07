@@ -187,5 +187,41 @@
     "compareHint": "Read-only comparison between this version and the current working copy.",
     "saveFailed": "Could not save a checkpoint.",
     "restoreFailed": "Could not restore this version."
+  },
+  "auth": {
+    "title": "LaTeX IDE",
+    "subtitle": "Sign in to keep your projects in the cloud.",
+    "google": "Continue with Google",
+    "signingIn": "Signing in…",
+    "note": "Projects are stored in Firebase and cached locally for fast, offline editing.",
+    "loading": "Connecting to Firebase…"
+  },
+  "account": {
+    "account": "Account",
+    "signOut": "Sign out"
+  },
+  "cloud": {
+    "idle": "Saved online",
+    "syncing": "Syncing…",
+    "error": "Sync error",
+    "loadFailed": "Could not load the cloud copy.",
+    "syncFailed": "Could not save to the cloud.",
+    "deleteFailed": "Could not delete the cloud project."
+  },
+  "share": {
+    "button": "Share",
+    "title": "Share project",
+    "subtitle": "Invite editors to “{{name}}”.",
+    "close": "Close",
+    "owner": "Owner",
+    "ownerRole": "Owner",
+    "editors": "Editors",
+    "noEditors": "No editors yet.",
+    "remove": "Remove",
+    "emailPlaceholder": "editor@example.com",
+    "add": "Add editor",
+    "hint": "Editors can open, edit, and sync this project. They must sign in with this email address.",
+    "footer": "Editor access only. Everyone with access can edit.",
+    "notSynced": "This project is not synced to the cloud yet. Save a checkpoint and try again."
   }
 }

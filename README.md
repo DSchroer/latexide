@@ -13,6 +13,7 @@ A local-first LaTeX editor that compiles in your browser. No account, no server,
 - Compile with a WebAssembly Tectonic engine (XeTeX + BibTeX)
 - PDF preview rendered with PDF.js
 - Local version history with automatic snapshots, named checkpoints, and restore
+- Google sign-in accounts with cloud-backed projects and editor sharing
 - Download the project as a ZIP (with or without `.history/`) or the compiled PDF
 - Autosave to IndexedDB, with the last PDF restored on reload
 - Installable PWA with an explicit “Offline” cache for the engine and packages
@@ -49,6 +50,50 @@ The app also patches `backend=biber` to `backend=bibtex` in the in-memory copy
 for the browser build; the file in the editor and exported ZIP is unchanged.
 `style=nature` works because `biblatex-nature` is in the thesis pack. If it is
 not available, `style=numeric` is part of the standard references pack.
+
+## Cloud accounts and sharing
+
+The app uses Firebase:
+
+- **Project:** `latexide-dschroer`
+- **Auth:** Google sign-in only
+- **Firestore:** project metadata, membership, and version manifests
+- **Storage:** `us-central1` bucket `latexide-dschroer.firebasestorage.app`
+- **Sharing:** owner invites editors by email; editors can open, edit, and sync
+
+The cloud copy is authoritative. IndexedDB is a local cache and outbox, so edits
+are saved immediately and synced after a checkpoint or auto-snapshot.
+
+### Firebase CLI
+
+The Firebase configuration lives in the repo:
+
+```text
+firebase.json
+.firebaserc
+firestore.rules
+firestore.indexes.json
+storage.rules
+```
+
+Deploy rules, indexes, and auth configuration:
+
+```bash
+npm run deploy:firebase
+```
+
+Local emulators:
+
+```bash
+npm run emulators
+```
+
+The web app config is public and lives in `src/firebase/config.ts`. Override it
+with the `VITE_FIREBASE_*` variables from `.env.example` if needed.
+
+Cloud Storage for Firebase requires the Blaze billing plan. Stay within the
+free allowance — 5 GB storage and 100 GB/month downloads for the US bucket —
+and set a billing budget alert because Blaze has no hard spending cap.
 
 ## Version history
 

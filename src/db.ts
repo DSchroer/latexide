@@ -25,6 +25,9 @@ class LatexIDEDatabase extends Dexie {
     this.version(3).stores({
       folders: '[projectId+path], projectId, path',
     })
+    this.version(4).stores({
+      projects: 'id, updatedAt, cloudId',
+    })
   }
 }
 
@@ -102,4 +105,18 @@ export async function ensureSeedProject(name = 'Welcome'): Promise<Project> {
 
 export async function saveProject(project: Project): Promise<void> {
   await db.projects.put({ ...project, updatedAt: Date.now() })
+}
+
+export async function clearLocalData(): Promise<void> {
+  await db.transaction('rw', [db.projects, db.files, db.folders, db.builds, db.versions, db.blobs, db.ui], async () => {
+    await Promise.all([
+      db.projects.clear(),
+      db.files.clear(),
+      db.folders.clear(),
+      db.builds.clear(),
+      db.versions.clear(),
+      db.blobs.clear(),
+      db.ui.clear(),
+    ])
+  })
 }

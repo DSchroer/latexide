@@ -187,5 +187,41 @@
     "compareHint": "Schreibgeschützter Vergleich zwischen dieser Version und dem aktuellen Arbeitsstand.",
     "saveFailed": "Checkpoint konnte nicht gespeichert werden.",
     "restoreFailed": "Diese Version konnte nicht wiederhergestellt werden."
+  },
+  "auth": {
+    "title": "LaTeX-IDE",
+    "subtitle": "Melde dich an, um deine Projekte in der Cloud zu speichern.",
+    "google": "Mit Google fortfahren",
+    "signingIn": "Anmeldung läuft…",
+    "note": "Projekte werden in Firebase gespeichert und lokal für schnelles, Offline-Bearbeiten zwischengespeichert.",
+    "loading": "Verbindung zu Firebase…"
+  },
+  "account": {
+    "account": "Konto",
+    "signOut": "Abmelden"
+  },
+  "cloud": {
+    "idle": "Online gespeichert",
+    "syncing": "Synchronisiere…",
+    "error": "Synchronisierungsfehler",
+    "loadFailed": "Die Cloud-Kopie konnte nicht geladen werden.",
+    "syncFailed": "Das Speichern in der Cloud ist fehlgeschlagen.",
+    "deleteFailed": "Das Cloud-Projekt konnte nicht gelöscht werden."
+  },
+  "share": {
+    "button": "Teilen",
+    "title": "Projekt teilen",
+    "subtitle": "Bearbeiter zu „{{name}}“ einladen.",
+    "close": "Schließen",
+    "owner": "Eigentümer",
+    "ownerRole": "Eigentümer",
+    "editors": "Bearbeiter",
+    "noEditors": "Noch keine Bearbeiter.",
+    "remove": "Entfernen",
+    "emailPlaceholder": "bearbeiter@example.com",
+    "add": "Bearbeiter hinzufügen",
+    "hint": "Bearbeiter können dieses Projekt öffnen, bearbeiten und synchronisieren. Die Anmeldung muss mit dieser E-Mail-Adresse erfolgen.",
+    "footer": "Nur Bearbeiterzugriff. Alle mit Zugriff können bearbeiten.",
+    "notSynced": "Dieses Projekt ist noch nicht mit der Cloud synchronisiert. Speichere einen Checkpoint und versuche es erneut."
   }
 }

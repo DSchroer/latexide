@@ -15,3 +15,9 @@ public/dictionaries/
 *.tsbuildinfo
 vite.config.js
 vite.config.d.ts
+
+# Local Firebase/emulator files
+.env
+.env.local
+.firebase/
+firebase-debug.log

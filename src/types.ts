@@ -4,6 +4,9 @@ export type Project = {
   mainFile: string
   createdAt: number
   updatedAt: number
+  cloudId?: string
+  ownerUid?: string
+  role?: 'owner' | 'editor'
 }
 
 export type FileKind = 'text' | 'binary'

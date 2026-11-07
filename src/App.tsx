@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { strToU8, zipSync } from 'fflate'
 import type { editor as MonacoEditor } from 'monaco-editor'
-import { createProject, db, ensureSeedProject, getUISetting, saveProject, setUISetting } from './db'
+import type { User } from 'firebase/auth'
+import { clearLocalData, createProject, db, ensureSeedProject, getUISetting, saveProject, setUISetting } from './db'
 import { downloadBytes } from './lib/download'
 import {
   basename,
@@ -26,8 +27,12 @@ import { PwaUpdate } from './components/PwaUpdate'
 import { Menu } from './components/Menu'
 import { HistoryPanel } from './components/HistoryPanel'
 import { DiffPanel } from './components/DiffPanel'
+import { AuthScreen } from './components/AuthScreen'
+import { ShareDialog } from './components/ShareDialog'
+import { useAuth } from './hooks/useAuth'
 import ZipWorker from './workers/zip.worker?worker'
 import { createVersion, deleteProjectData, ensureInitialVersion, exportHistory, importHistory, restoreVersion } from './lib/versioning'
+import { deleteCloudProject, getCloudProject, pullCloudProject, syncAccountProjects, syncAllVersions, syncVersionToCloud } from './lib/cloud'
 
 type ZipEntry = { path: string; data: ArrayBuffer }
 
@@ -97,7 +102,7 @@ function BinaryView({ file }: { file: ProjectFile }) {
   )
 }
 
-export default function App() {
+function Workspace({ user, onSignOut }: { user: User; onSignOut: () => Promise<void> }) {
   const { t, i18n } = useTranslation()
   const currentLanguage = i18n.resolvedLanguage?.startsWith('de') ? 'de' : 'en'
   const [projects, setProjects] = useState<Project[]>([])
@@ -114,6 +119,8 @@ export default function App() {
   const [compareVersion, setCompareVersion] = useState<Version | null>(null)
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0)
   const [versionCount, setVersionCount] = useState(0)
+  const [cloudStatus, setCloudStatus] = useState<'idle' | 'syncing' | 'error'>('idle')
+  const [shareOpen, setShareOpen] = useState(false)
   const [mobileTab, setMobileTab] = useState<'files' | 'editor' | 'pdf'>('editor')
   const [toast, setToast] = useState<{ message: string; kind: 'info' | 'error' } | null>(null)
   const [online, setOnline] = useState(navigator.onLine)
@@ -251,9 +258,31 @@ export default function App() {
     if (version) {
       setVersionCount(await db.versions.where('projectId').equals(current.id).count())
       setHistoryRefreshKey((value) => value + 1)
+
+      setCloudStatus('syncing')
+      try {
+        const synced = await syncVersionToCloud(current, version, user)
+        if (synced.cloudId) {
+          current.cloudId = synced.cloudId
+          current.ownerUid = synced.ownerUid
+          current.role = synced.role
+          projectRef.current = current
+          setProjects((previous) =>
+            previous.map((item) =>
+              item.id === current.id
+                ? { ...item, cloudId: synced.cloudId, ownerUid: synced.ownerUid, role: synced.role }
+                : item,
+            ),
+          )
+        }
+        setCloudStatus('idle')
+      } catch (error) {
+        setCloudStatus('error')
+        notify(error instanceof Error ? `${t('cloud.syncFailed')} ${error.message}` : t('cloud.syncFailed'), 'error')
+      }
     }
     return version
-  }, [])
+  }, [notify, t, user])
 
   const saveCheckpoint = useCallback(
     async (label?: string) => {
@@ -269,6 +298,31 @@ export default function App() {
     [captureSnapshot, notify, t],
   )
 
+  const publishProject = async (target: Project) => {
+    setCloudStatus('syncing')
+    try {
+      const synced = await syncAllVersions(target, user)
+      if (synced.cloudId) {
+        target.cloudId = synced.cloudId
+        target.ownerUid = synced.ownerUid
+        target.role = synced.role
+      }
+      setProjects((previous) =>
+        previous.map((item) =>
+          item.id === synced.id
+            ? { ...item, cloudId: synced.cloudId, ownerUid: synced.ownerUid, role: synced.role }
+            : item,
+        ),
+      )
+      setCloudStatus('idle')
+      return synced
+    } catch (error) {
+      setCloudStatus('error')
+      notify(error instanceof Error ? `${t('cloud.syncFailed')} ${error.message}` : t('cloud.syncFailed'), 'error')
+      return target
+    }
+  }
+
   const saveCheckpointWithPrompt = async () => {
     const label = window.prompt(t('history.labelPrompt'), t('history.checkpoint'))
     if (label === null) return
@@ -282,6 +336,16 @@ export default function App() {
       // Still let the user inspect existing versions if storage is full.
     }
     setHistoryOpen(true)
+  }
+
+  const openShare = async () => {
+    const current = projectRef.current
+    if (!current || current.role !== 'owner') return
+    if (!current.cloudId) {
+      const synced = await publishProject(current)
+      if (!synced.cloudId) return
+    }
+    setShareOpen(true)
   }
 
   const restoreHistory = async (version: Version) => {
@@ -320,9 +384,20 @@ export default function App() {
     )
     resetOnNextCompile.current = true
 
-    await createVersion(current.id, restored, version.mainFile, 'restore', t('history.restoredFrom', { label: version.label }), version.folders ?? [])
+    const restoredVersion = await createVersion(current.id, restored, version.mainFile, 'restore', t('history.restoredFrom', { label: version.label }), version.folders ?? [])
     setVersionCount(await db.versions.where('projectId').equals(current.id).count())
     setHistoryRefreshKey((value) => value + 1)
+
+    if (restoredVersion) {
+      setCloudStatus('syncing')
+      try {
+        await syncVersionToCloud(current, restoredVersion, user)
+        setCloudStatus('idle')
+      } catch (error) {
+        setCloudStatus('error')
+        notify(error instanceof Error ? `${t('cloud.syncFailed')} ${error.message}` : t('cloud.syncFailed'), 'error')
+      }
+    }
     setHistoryOpen(false)
     setCompareVersion(null)
     notify(t('history.restored', { label: version.label }))
@@ -330,26 +405,53 @@ export default function App() {
 
 
   const loadProject = useCallback(async (next: Project) => {
-    const list = await db.files.where('projectId').equals(next.id).toArray()
-    const folderList = await db.folders.where('projectId').equals(next.id).toArray()
+    let current = next
+
+    if (current.cloudId) {
+      setCloudStatus('syncing')
+      try {
+        const cloud = await getCloudProject(current.cloudId, current.role ?? 'editor')
+        current = await pullCloudProject(cloud, current.id)
+        setCloudStatus('idle')
+      } catch (error) {
+        setCloudStatus('error')
+        notify(error instanceof Error ? `${t('cloud.loadFailed')} ${error.message}` : t('cloud.loadFailed'), 'error')
+      }
+    }
+
+    const list = await db.files.where('projectId').equals(current.id).toArray()
+    const folderList = await db.folders.where('projectId').equals(current.id).toArray()
     const map: Record<string, ProjectFile> = {}
     for (const file of list) map[file.path] = file
     const folderMap: Record<string, ProjectFolder> = {}
     for (const folder of folderList) folderMap[folder.path] = folder
 
-    const lastFile = await getUISetting(`activeFile:${next.id}`)
+    const lastFile = await getUISetting(`activeFile:${current.id}`)
     const initial =
       lastFile && map[lastFile]
         ? lastFile
-        : next.mainFile && map[next.mainFile]
-          ? next.mainFile
+        : current.mainFile && map[current.mainFile]
+          ? current.mainFile
           : Object.keys(map)[0] ?? null
 
-    const build = await db.builds.get(next.id)
-    await ensureInitialVersion(next.id, list, next.mainFile, t('history.initial'), folderList.map((folder) => folder.path))
-    setVersionCount(await db.versions.where('projectId').equals(next.id).count())
+    const build = await db.builds.get(current.id)
+    const versionsBefore = await db.versions.where('projectId').equals(current.id).count()
+    await ensureInitialVersion(current.id, list, current.mainFile, t('history.initial'), folderList.map((folder) => folder.path))
+    const versionsAfter = await db.versions.where('projectId').equals(current.id).count()
+    setVersionCount(versionsAfter)
+    if (current.cloudId && current.role === 'owner' && versionsBefore === 0 && versionsAfter > 0) {
+      void syncAllVersions(current, user).then((synced) => {
+        setProjects((previous) =>
+          previous.map((item) =>
+            item.id === synced.id
+              ? { ...item, cloudId: synced.cloudId, ownerUid: synced.ownerUid, role: synced.role }
+              : item,
+          ),
+        )
+      }).catch(() => setCloudStatus('error'))
+    }
 
-    setProjectId(next.id)
+    setProjectId(current.id)
     setFiles(map)
     setFolders(folderMap)
     setOpenPaths(initial ? [initial] : [])
@@ -359,12 +461,19 @@ export default function App() {
     setResultProjectId(null)
     setShowProblems(Boolean(build?.diagnostics.some((item) => item.severity === 'error')))
     resetOnNextCompile.current = true
-    await setUISetting('activeProjectId', next.id)
-  }, [])
+    await setUISetting('activeProjectId', current.id)
+    setProjects((previous) => previous.map((item) => (item.id === current.id ? current : item)))
+  }, [t, notify, user])
 
   useEffect(() => {
     let cancelled = false
     void (async () => {
+      const previousAccount = await getUISetting('accountUid')
+      if (previousAccount && previousAccount !== user.uid) {
+        await clearLocalData()
+      }
+      await setUISetting('accountUid', user.uid)
+
       const seed = await ensureSeedProject(t('project.welcome'))
       const all = await db.projects.orderBy('updatedAt').reverse().toArray()
       if (cancelled) return
@@ -372,11 +481,23 @@ export default function App() {
       const activeId = await getUISetting('activeProjectId')
       const chosen = all.find((item) => item.id === activeId) ?? seed
       await loadProject(chosen)
+
+      if (cancelled) return
+      setCloudStatus('syncing')
+      try {
+        const synced = await syncAccountProjects(user)
+        if (cancelled) return
+        setProjects(synced)
+        setCloudStatus('idle')
+      } catch (error) {
+        setCloudStatus('error')
+        notify(error instanceof Error ? `${t('cloud.syncFailed')} ${error.message}` : t('cloud.syncFailed'), 'error')
+      }
     })()
     return () => {
       cancelled = true
     }
-  }, [loadProject])
+  }, [loadProject, notify, t, user])
 
   useEffect(() => {
     if (projectId && activePath) void setUISetting(`activeFile:${projectId}`, activePath)
@@ -718,6 +839,7 @@ export default function App() {
       const all = await db.projects.orderBy('updatedAt').reverse().toArray()
       setProjects(all)
       await loadProject(created)
+      await publishProject(created)
       notify(t(root ? 'toast.importedRoot' : 'toast.imported', { count: records.length, root }))
     } catch (error) {
       notify(error instanceof Error ? `${t('toast.importFailed')} ${error.message}` : t('toast.importFailed'), 'error')
@@ -856,11 +978,24 @@ export default function App() {
     const all = await db.projects.orderBy('updatedAt').reverse().toArray()
     setProjects(all)
     await loadProject(created)
+    await publishProject(created)
   }
 
   const removeProject = async () => {
     if (!project) return
     if (!window.confirm(t('project.deleteProjectConfirm', { name: project.name }))) return
+
+    if (project.cloudId && project.role === 'owner') {
+      setCloudStatus('syncing')
+      try {
+        await deleteCloudProject(project.cloudId)
+        setCloudStatus('idle')
+      } catch (error) {
+        setCloudStatus('error')
+        notify(error instanceof Error ? `${t('cloud.deleteFailed')} ${error.message}` : t('cloud.deleteFailed'), 'error')
+        return
+      }
+    }
 
     await deleteProjectData(project.id)
     const remaining = projects.filter((item) => item.id !== project.id)
@@ -982,6 +1117,12 @@ export default function App() {
             {t('toolbar.history')}{versionCount > 0 ? ` (${versionCount})` : ''}
           </button>
 
+          {project?.role === 'owner' && (
+            <button className="small-button" onClick={() => void openShare()} disabled={!project}>
+              {t('share.button')}
+            </button>
+          )}
+
           <Menu
             label={t('toolbar.export')}
             align="left"
@@ -1047,6 +1188,19 @@ export default function App() {
             ]}
           />
         </div>
+
+        <div className={`cloud-status is-${cloudStatus}`} title={t(`cloud.${cloudStatus}`)}>
+          <span className="status-dot" />
+          <span className="status-text">{t(`cloud.${cloudStatus}`)}</span>
+        </div>
+
+        <Menu
+          label={user.email?.split('@')[0] ?? t('account.account')}
+          title={user.email ?? ''}
+          align="right"
+          className="user-menu"
+          items={[{ label: t('account.signOut'), onClick: () => void onSignOut() }]}
+        />
 
         <div className={`engine-status${compileState === 'error' ? ' is-error' : ''}${!online ? ' is-offline' : ''}`} title={compileStatus}>
           <span className="status-dot" />
@@ -1160,6 +1314,14 @@ export default function App() {
         />
       )}
 
+      {project && (
+        <ShareDialog
+          project={project}
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
+
       {toast && <div className={`toast toast-${toast.kind}`}>{toast.message}</div>}
       <PwaUpdate />
       {project && (
@@ -1170,4 +1332,26 @@ export default function App() {
       {!projectId && <div className="loading-overlay">{t('app.loadingProject')}</div>}
     </div>
   )
+}
+
+export default function App() {
+  const { t } = useTranslation()
+  const { user, loading, error, signIn, signOut } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="auth-screen">
+        <div className="auth-card">
+          <div className="auth-mark">λ</div>
+          <p>{t('auth.loading')}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <AuthScreen onSignIn={signIn} error={error} />
+  }
+
+  return <Workspace user={user} onSignOut={signOut} />
 }

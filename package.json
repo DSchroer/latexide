@@ -16,7 +16,10 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json --pretty false",
     "assets": "node scripts/copy-assets.mjs",
     "thesis-pack": "bash scripts/build-thesis-pack.sh",
-    "test:thesis": "node scripts/test-thesis.mjs"
+    "test:thesis": "node scripts/test-thesis.mjs",
+    "fb": "firebase",
+    "deploy:firebase": "firebase deploy --only auth,firestore:rules,firestore:indexes,storage",
+    "emulators": "firebase emulators:start --only auth,firestore,storage"
   },
   "keywords": [
     "latex",
@@ -29,6 +32,7 @@
     "@monaco-editor/react": "^4.6.0",
     "dexie": "^4.4.7",
     "fflate": "^0.8.2",
+    "firebase": "^11.10.0",
     "glyphtex-engine": "^0.1.4",
     "i18next": "^23.16.8",
     "i18next-browser-languagedetector": "^8.0.2",
@@ -46,6 +50,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "dictionary-de": "^3.0.0",
     "dictionary-en-gb": "^3.0.0",
+    "firebase-tools": "^15.35.0",
     "typescript": "^5.6.3",
     "vite": "^5.4.11",
     "vite-plugin-pwa": "^0.20.5"

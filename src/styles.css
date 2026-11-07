@@ -1418,3 +1418,238 @@ pre {
     align-items: flex-start;
   }
 }
+
+.cloud-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 150px;
+  padding: 0 6px;
+  color: var(--muted);
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.cloud-status.is-syncing .status-dot {
+  background: var(--warning);
+  box-shadow: 0 0 0 3px rgba(227, 179, 65, 0.12);
+}
+
+.cloud-status.is-error {
+  color: var(--danger);
+}
+
+.cloud-status.is-error .status-dot {
+  background: var(--danger);
+  box-shadow: 0 0 0 3px rgba(255, 123, 114, 0.12);
+}
+
+.user-menu .menu-trigger {
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auth-screen {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(244, 114, 182, 0.12), transparent 35%),
+    radial-gradient(circle at 80% 90%, rgba(219, 39, 119, 0.1), transparent 35%),
+    var(--bg);
+}
+
+.auth-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(420px, 100%);
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.auth-mark {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 17px;
+  background: linear-gradient(145deg, #f472b6, #be185d);
+  color: white;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 34px;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.auth-card h1 {
+  margin: 18px 0 6px;
+  font-size: 24px;
+  font-weight: 650;
+}
+
+.auth-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.auth-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 42px;
+  margin-top: 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: #fff;
+  color: #2b2027;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.auth-google:hover:not(:disabled) {
+  background: #fff4fa;
+}
+
+.auth-google-mark {
+  display: grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #fff;
+  color: #4285f4;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.auth-error {
+  width: 100%;
+  margin-top: 14px;
+  padding: 9px 11px;
+  border: 1px solid rgba(255, 123, 114, 0.3);
+  border-radius: 7px;
+  background: rgba(255, 123, 114, 0.08);
+  color: #ffb4ae;
+  font-size: 11.5px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.auth-note {
+  margin-top: 20px !important;
+  color: var(--faint) !important;
+  font-size: 10.5px !important;
+}
+
+.share-modal {
+  width: min(600px, 100%);
+}
+
+.share-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 16px;
+}
+
+.share-label {
+  margin: 14px 0 5px;
+  color: var(--faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.share-label:first-child {
+  margin-top: 0;
+}
+
+.share-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 0;
+  font-size: 12px;
+}
+
+.share-avatar {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(244, 114, 182, 0.14);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+
+.share-email {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-role {
+  color: var(--faint);
+  font-size: 10.5px;
+}
+
+.share-add {
+  display: flex;
+  gap: 7px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.share-input {
+  flex: 1;
+  min-width: 0;
+  height: 31px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  outline: none;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.share-input:focus {
+  border-color: var(--accent);
+}
+
+.share-hint {
+  margin: 10px 0 0;
+  color: var(--faint);
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .cloud-status {
+    display: none;
+  }
+
+  .user-menu .menu-trigger {
+    max-width: 84px;
+  }
+}
