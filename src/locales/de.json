@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "LaTeX-IDE",
+    "title": "Domverleaf",
     "loadingProject": "Projekt wird geladen…",
     "summary": "{{name}} · {{count}} Dateien · {{status}}"
   },
@@ -189,7 +189,7 @@
     "restoreFailed": "Diese Version konnte nicht wiederhergestellt werden."
   },
   "auth": {
-    "title": "LaTeX-IDE",
+    "title": "Domverleaf",
     "subtitle": "Melde dich an, um deine Projekte in der Cloud zu speichern.",
     "google": "Mit Google fortfahren",
     "signingIn": "Anmeldung läuft…",

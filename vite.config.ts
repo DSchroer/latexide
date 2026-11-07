@@ -21,9 +21,9 @@ export default defineConfig({
       injectRegister: null,
       includeAssets: ['icons/apple-touch-icon.png', 'icons/favicon.svg'],
       manifest: {
-        name: 'LaTeX IDE',
-        short_name: 'LaTeX IDE',
-        description: 'Compile LaTeX locally in your browser',
+        name: 'Domverleaf',
+        short_name: 'Domverleaf',
+        description: 'Domverleaf — compile LaTeX locally in your browser',
         theme_color: '#1e141c',
         background_color: '#1e141c',
         display: 'standalone',
