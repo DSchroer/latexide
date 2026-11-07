@@ -191,11 +191,8 @@
   "auth": {
     "title": "Domverleaf",
     "subtitle": "Melde dich an, um deine Projekte in der Cloud zu speichern.",
-    "google": "Mit Google fortfahren",
-    "signingIn": "Anmeldung läuft…",
     "note": "Projekte werden in Firebase gespeichert und lokal für schnelles, Offline-Bearbeiten zwischengespeichert.",
     "loading": "Verbindung zu Firebase…",
-    "or": "oder",
     "emailPlaceholder": "du@example.com",
     "magicLink": "Anmelde-Link per E-Mail senden",
     "sending": "Sende…",

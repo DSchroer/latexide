@@ -1,5 +1,5 @@
 import { initializeApp, type FirebaseOptions } from 'firebase/app'
-import { browserLocalPersistence, getAuth, GoogleAuthProvider, setPersistence } from 'firebase/auth'
+import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
@@ -16,10 +16,6 @@ export const firebaseApp = initializeApp(firebaseConfig)
 export const auth = getAuth(firebaseApp)
 export const cloudDb = getFirestore(firebaseApp)
 export const cloudStorage = getStorage(firebaseApp, firebaseConfig.storageBucket)
-export const googleProvider = new GoogleAuthProvider()
-
-googleProvider.setCustomParameters({ prompt: 'select_account' })
-
 void setPersistence(auth, browserLocalPersistence).catch(() => {
   // Auth still works for the current tab if persistence is unavailable.
 })

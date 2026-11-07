@@ -4,13 +4,11 @@ import {
   onAuthStateChanged,
   sendSignInLinkToEmail,
   signInWithEmailLink,
-  signInWithPopup,
-  signInWithRedirect,
   signOut as firebaseSignOut,
   type ActionCodeSettings,
   type User,
 } from 'firebase/auth'
-import { auth, googleProvider } from '../firebase/config'
+import { auth } from '../firebase/config'
 
 function readStoredEmail(): string {
   try {
@@ -106,20 +104,6 @@ export function useAuth() {
     }
   }, [completeMagicLink])
 
-  const signIn = async () => {
-    setError(null)
-    try {
-      await signInWithPopup(auth, googleProvider)
-    } catch (reason) {
-      const code = (reason as { code?: string })?.code
-      if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-        await signInWithRedirect(auth, googleProvider)
-        return
-      }
-      setError(reason instanceof Error ? reason.message : String(reason))
-    }
-  }
-
   const sendMagicLink = async (email: string) => {
     const target = email.trim()
     if (!target) {
@@ -146,7 +130,6 @@ export function useAuth() {
     user,
     loading,
     error,
-    signIn,
     signOut,
     sendMagicLink,
     completeMagicLink,

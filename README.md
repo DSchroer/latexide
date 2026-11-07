@@ -13,7 +13,7 @@ A local-first LaTeX editor that compiles in your browser. No account, no server,
 - Compile with a WebAssembly Tectonic engine (XeTeX + BibTeX)
 - PDF preview rendered with PDF.js
 - Local version history with automatic snapshots, named checkpoints, and restore
-- Google sign-in and passwordless email-link (magic link) accounts
+- Passwordless email-link (magic link) accounts
 - Cloud-backed projects with editor sharing
 - Download the project as a ZIP (with or without `.history/`) or the compiled PDF
 - Autosave to IndexedDB, with the last PDF restored on reload
@@ -57,7 +57,7 @@ not available, `style=numeric` is part of the standard references pack.
 The app uses Firebase:
 
 - **Project:** `latexide-dschroer`
-- **Auth:** Google sign-in and email-link magic link
+- **Auth:** email-link magic link only
 - **Firestore:** project metadata, membership, and version manifests
 - **Storage:** `us-central1` bucket `latexide-dschroer.firebasestorage.app`
 - **Sharing:** owner invites editors by email; editors can open, edit, and sync

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 type Props = {
-  onSignIn: () => Promise<void>
   onSendMagicLink: (email: string) => Promise<void>
   onCompleteMagicLink: (email: string) => Promise<void>
   error: string | null
@@ -12,7 +11,6 @@ type Props = {
 }
 
 export function AuthScreen({
-  onSignIn,
   onSendMagicLink,
   onCompleteMagicLink,
   error,
@@ -57,7 +55,7 @@ export function AuthScreen({
               autoFocus
             />
             <button
-              className="auth-google auth-submit"
+              className="auth-submit"
               onClick={() => void run(() => onCompleteMagicLink(email))}
               disabled={busy || !email.trim()}
             >
@@ -66,15 +64,6 @@ export function AuthScreen({
           </div>
         ) : (
           <>
-            <button className="auth-google" onClick={() => void run(onSignIn)} disabled={busy}>
-              <span className="auth-google-mark">G</span>
-              {busy ? t('auth.signingIn') : t('auth.google')}
-            </button>
-
-            <div className="auth-divider">
-              <span>{t('auth.or')}</span>
-            </div>
-
             <div className="auth-link-form">
               <input
                 className="auth-input"
@@ -89,7 +78,7 @@ export function AuthScreen({
                 }}
               />
               <button
-                className="auth-google auth-submit"
+                className="auth-submit"
                 onClick={() => void run(() => onSendMagicLink(email))}
                 disabled={busy || !email.trim()}
               >

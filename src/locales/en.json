@@ -191,11 +191,8 @@
   "auth": {
     "title": "Domverleaf",
     "subtitle": "Sign in to keep your projects in the cloud.",
-    "google": "Continue with Google",
-    "signingIn": "Signing in…",
     "note": "Projects are stored in Firebase and cached locally for fast, offline editing.",
     "loading": "Connecting to Firebase…",
-    "or": "or",
     "emailPlaceholder": "you@example.com",
     "magicLink": "Email me a sign-in link",
     "sending": "Sending…",

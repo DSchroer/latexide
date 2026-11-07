@@ -1,16 +1,6 @@
 {
   "auth": {
     "providers": {
-      "googleSignIn": {
-        "oAuthBrandDisplayName": "Domverleaf",
-        "supportEmail": "dominick.schroer@gmail.com",
-        "authorizedRedirectUris": [
-          "https://latexide-dschroer.firebaseapp.com",
-          "https://latexide-dschroer.firebaseapp.com/__/auth/handler",
-          "https://dschroer.github.io",
-          "http://localhost"
-        ]
-      },
       "emailPassword": true
     }
   },
