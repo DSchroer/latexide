@@ -118,6 +118,10 @@ export async function getCloudProject(cloudId: string, role: CloudRole = 'owner'
   return cloudProjectFromDoc(snap.id, snap.data() as Record<string, unknown>, role)
 }
 
+export async function renameCloudProject(cloudId: string, name: string): Promise<void> {
+  await updateDoc(projectDocRef(cloudId), { name, updatedAt: Date.now() })
+}
+
 async function createLocalProjectForCloud(cloud: CloudProject): Promise<Project> {
   const existing = await db.projects.where('cloudId').equals(cloud.id).first()
   if (existing) {

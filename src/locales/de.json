@@ -47,6 +47,8 @@
     "renamePrompt": "Datei umbenennen",
     "deleteConfirm": "{{path}} löschen?",
     "defaultFileName": "chapter.tex",
+    "renameProject": "Projekt umbenennen",
+    "renameProjectPrompt": "Projekt umbenennen",
     "deleteProject": "Projekt löschen",
     "deleteProjectConfirm": "Projekt \"{{name}}\" löschen? Dateien und lokaler Verlauf werden aus diesem Browser entfernt.",
     "deleted": "Projekt gelöscht."

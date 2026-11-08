@@ -32,7 +32,7 @@ import { ShareDialog } from './components/ShareDialog'
 import { useAuth } from './hooks/useAuth'
 import ZipWorker from './workers/zip.worker?worker'
 import { createVersion, deleteProjectData, ensureInitialVersion, exportHistory, importHistory, restoreVersion } from './lib/versioning'
-import { deleteCloudProject, getCloudProject, pullCloudProject, syncAccountProjects, syncAllVersions, syncVersionToCloud } from './lib/cloud'
+import { deleteCloudProject, getCloudProject, pullCloudProject, renameCloudProject, syncAccountProjects, syncAllVersions, syncVersionToCloud } from './lib/cloud'
 
 type ZipEntry = { path: string; data: ArrayBuffer }
 
@@ -970,6 +970,28 @@ function Workspace({ user, onSignOut }: { user: User; onSignOut: () => Promise<v
     }
   }
 
+  const renameProject = async () => {
+    if (!project) return
+    const next = window.prompt(t('project.renameProjectPrompt'), project.name)
+    if (next === null) return
+    const name = next.trim()
+    if (!name || name === project.name) return
+
+    const updated = { ...project, name, updatedAt: Date.now() }
+    await saveProject(updated)
+    setProjects((previous) => previous.map((item) => (item.id === updated.id ? updated : item)))
+
+    if (!updated.cloudId) return
+    setCloudStatus('syncing')
+    try {
+      await renameCloudProject(updated.cloudId, name)
+      setCloudStatus('idle')
+    } catch (error) {
+      setCloudStatus('error')
+      notify(error instanceof Error ? `${t('cloud.syncFailed')} ${error.message}` : t('cloud.syncFailed'), 'error')
+    }
+  }
+
   const createBlankProject = async () => {
     const text = '\\documentclass{article}\n\n\\begin{document}\n\n\\end{document}\n'
     const created = await createProject(t('project.untitled'), [
@@ -1096,6 +1118,7 @@ function Workspace({ user, onSignOut }: { user: User; onSignOut: () => Promise<v
           ))}
         </select>
         <button className="icon-button" onClick={() => void createBlankProject()} title={t('toolbar.newProject')}>+</button>
+        <button className="icon-button" onClick={() => void renameProject()} title={t('project.renameProject')} disabled={!project}>✎</button>
         <button className="icon-button delete-project-button" onClick={() => void removeProject()} title={t('project.deleteProject')} disabled={!project}>🗑</button>
 
         <div className="toolbar-actions">
