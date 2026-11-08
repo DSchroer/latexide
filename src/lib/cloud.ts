@@ -432,19 +432,39 @@ export async function removeCloudMember(cloudId: string, email: string): Promise
   return { ...project, memberEmails, memberRoles }
 }
 
-export async function syncAccountProjects(user: User): Promise<Project[]> {
+export type CloudSyncResult = {
+  projects: Project[]
+  failed: Array<{ project: Project; error: unknown }>
+}
+
+export async function syncAccountProjects(
+  user: User,
+  onProjects?: (projects: Project[]) => void,
+): Promise<CloudSyncResult> {
   const cloudProjects = await listCloudProjects(user)
 
   for (const cloud of cloudProjects) {
     await createLocalProjectForCloud(cloud)
   }
 
+  // Publish the project list as soon as cloud projects are known. Uploading
+  // local projects can be slow or fail, and must not keep shared projects out
+  // of the project picker while it runs.
+  onProjects?.(await db.projects.orderBy('updatedAt').reverse().toArray())
+
+  const failed: CloudSyncResult['failed'] = []
   const locals = await db.projects.toArray()
   for (const local of locals) {
     if (local.cloudId) continue
-    const { project } = await ensureCloudProject(local, user)
-    await syncAllVersions(project, user)
+    try {
+      const { project } = await ensureCloudProject(local, user)
+      await syncAllVersions(project, user)
+    } catch (error) {
+      failed.push({ project: local, error })
+    }
   }
 
-  return db.projects.orderBy('updatedAt').reverse().toArray()
+  const projects = await db.projects.orderBy('updatedAt').reverse().toArray()
+  onProjects?.(projects)
+  return { projects, failed }
 }

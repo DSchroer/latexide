@@ -485,11 +485,22 @@ function Workspace({ user, onSignOut }: { user: User; onSignOut: () => Promise<v
       if (cancelled) return
       setCloudStatus('syncing')
       try {
-        const synced = await syncAccountProjects(user)
+        const result = await syncAccountProjects(user, (next) => {
+          if (!cancelled) setProjects(next)
+        })
         if (cancelled) return
-        setProjects(synced)
-        setCloudStatus('idle')
+        setProjects(result.projects)
+        if (result.failed.length > 0) {
+          setCloudStatus('error')
+          const names = result.failed.map((item) => item.project.name).join(', ')
+          notify(t('cloud.uploadFailed', { names }), 'error')
+        } else {
+          setCloudStatus('idle')
+        }
       } catch (error) {
+        if (cancelled) return
+        // Keep any projects that were discovered before the failure visible.
+        setProjects(await db.projects.orderBy('updatedAt').reverse().toArray())
         setCloudStatus('error')
         notify(error instanceof Error ? `${t('cloud.syncFailed')} ${error.message}` : t('cloud.syncFailed'), 'error')
       }

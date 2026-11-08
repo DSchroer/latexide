@@ -213,6 +213,7 @@
     "error": "Sync error",
     "loadFailed": "Could not load the cloud copy.",
     "syncFailed": "Could not save to the cloud.",
+    "uploadFailed": "Some projects could not be uploaded to the cloud: {{names}}",
     "deleteFailed": "Could not delete the cloud project."
   },
   "share": {

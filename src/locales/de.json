@@ -213,6 +213,7 @@
     "error": "Synchronisierungsfehler",
     "loadFailed": "Die Cloud-Kopie konnte nicht geladen werden.",
     "syncFailed": "Das Speichern in der Cloud ist fehlgeschlagen.",
+    "uploadFailed": "Einige Projekte konnten nicht in die Cloud hochgeladen werden: {{names}}",
     "deleteFailed": "Das Cloud-Projekt konnte nicht gelöscht werden."
   },
   "share": {
